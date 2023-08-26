@@ -1,0 +1,9 @@
+{
+  "path": "features::ghostping",
+  "data": {
+    "author": "Kady Anti ghostping",
+    "single": "> 🔎  ** ** <@{author}> **a mentionné** <@{mention}> **dans un message supprimé**",
+    "multiple": "> 🔎  ** ** <@{author}> **a mentionné** <@{mention}> {count}x **dans un message supprimé**",
+    "a_lot": "> 🔎  ** ** <@{author}> **a mentionné des utilisateurs dans un message supprimé.** (mentions: {mentions})"
+  }
+}

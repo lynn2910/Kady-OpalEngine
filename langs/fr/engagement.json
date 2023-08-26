@@ -1,0 +1,20 @@
+{
+  "path": "engagement",
+  "data": {
+    "top": {
+      "invalid_category": "> ❌ ** ** **Cette catégorie est indisponible ou n'existe plus.**",
+      "no_category": "> ❌ ** ** **Vous n'avez pas sélectionné(e) de catégories.**",
+      "guild_only": "> ❌ ** ** **Cette catégorie n'est disponible que pour les serveurs.**\nVeuillez utiliser cette commande dans un serveur.",
+      "empty": "> 😶 ** ** **Il n'y a personne à classer !**",
+      "xp_style": "> #{rank} **{name}**\nㅤ ㅤ{xp} xp | lvl {lvl}",
+      "xp_disabled": "> ❌ ** ** **Le système d'experience n'est pas activé.**",
+      "xp_top": ">>> 🏆 ** ** Classement d'expérience :**\nServeur {guild}",
+      "xp_author_rank": "Vous êtes **#{rank}**.",
+      "cookies_style": "> **#{rank}** - {cookies} - **{name}**",
+      "cookies_author_rank": "Vous êtes **#{rank}**.",
+      "cookies_top_global": ">>> 🍪 ** ** **Classement des détenteurs de cookies :**\nTout les serveurs compris",
+      "cookies_top_guild": ">>> 🍪 ** ** **Classement des détenteurs de cookies :**\nServeur {guild}",
+      "no_cookies": "Vous n'avez pas encore de cookies."
+    }
+  }
+}

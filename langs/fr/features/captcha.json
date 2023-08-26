@@ -1,0 +1,12 @@
+{
+  "path": "features::captcha",
+  "data": {
+    "request": "> **Complétez le captcha ci-dessous.**",
+    "request_loading": "> \uD83D\uDD8C\uFE0F ** ** <@{id}> **Génération de l'image...**",
+    "invalid_instance": "> \uD83D\uDD12 ** ** **Cette session est expirée.**\nVeuillez générer un nouveau captcha.",
+    "bad_code": "> ❌ ** ** **Vous avez sélectionné le mauvais code, ce captcha a été invalidé.**\nVous pouvez générer un nouveau captcha.",
+    "invalid_config": "> ❌ ** ** **La configuration du captcha sur ce serveur n'est pas complète.**\nVeuillez en informer les administrateurs du serveur.",
+    "ok": "> \uD83D\uDD11 ** ** **Vous avez passé le captcha avec succès !**\nVous avez désormais accès au serveur \uD83C\uDF89",
+    "disabled": "> ❌ ** ** **Le système de captcha est désactivé sur ce serveur.**\nVous pouvez demander à un administrateur de l'activer."
+  }
+}

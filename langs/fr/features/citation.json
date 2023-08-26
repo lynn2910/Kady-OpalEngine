@@ -1,0 +1,8 @@
+{
+  "path": "features::citation",
+  "data": {
+    "not_enabled": "> ❌ ** ** **Cette fonctionnalité n'est pas activée.**",
+    "no_valid_channel": "> ❌ ** ** **Aucun salon n'a été configuré ou ce salon n'existe plus.**",
+    "sent": "> ✨ ** ** **Votre citation a été envoyée !**"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "path": "errors",
+  "data": {
+    "cannot_get_captcha_level": "> ❌ ** ** **Une erreur est survenue en chargeant le niveau de difficulté.**\nVeuillez contacter les développeurs.",
+    "cannot_get_captcha_model": "> ❌ ** ** **Une erreur est survenue en chargeant le model du captcha.**\nVeuillez contacter les développeurs.",
+    "cannot_generate_captcha": "> ❌ ** ** **Une erreur est survenue en générant le captcha.**\nVeuillez contacter les développeurs.",
+    "cannot_get_guild_data": "> ❌ ** ** **Une erreur est survenue en accédant aux données du serveur.**",
+    "cannot_acquire_user": "> ❌ ** ** **Impossible de trouver l'utilisateur.**",
+    "internal_error": "> ❌ ** ** **Une erreur interne est survenue.**\nSi le problème persiste, veuillez contacter les développeurs.\nCode d'identification de l'erreur:  `{code}`",
+    "cannot_get_user_id": "> ❌ ** ** **Nous ne parvenons pas à vous identifier.**\nVeuillez signaler ce soucis à l'équipe de développement.",
+    "cannot_remove_role": "> ❌ ** ** **Nous ne parvenons pas à retirer le rôle de <@{id}>.**",
+    "not_guild": "> ❌ ** ** **Cette commande n'est pas disponible en message privé.**",
+    "not_for_bot": "> ❌ ** ** **Cette fonctionnalité ne peut pas être utilisée sur des bots.**",
+    "not_a_member": "> ❌ ** ** **Cet utilisateur n'est pas sur le serveur.**",
+
+    "access_denied": "> ⛔ ** ** **Accès refusé.**",
+    "admin_only": "> ⛔ ** ** **Accès refusé.**\nL'équipe administrative a été prévenue de votre tentative.",
+
+    "unknown_slash_command": "> ❌ ** ** **Nous ne parvenons pas à identifier cette commande.**",
+    "unknown_component": "> ❌ ** ** **Nous ne parvenons pas à identifier ce composant.**",
+    "unknown_button": "> ❌ ** ** **Nous ne parvenons pas à identifier ce bouton.**",
+    "unknown_select_menu": "> ❌ ** ** **Nous ne parvenons pas à identifier ce menu de sélection.**",
+    "unknown_modal": "> ❌ ** ** **Nous ne parvenons pas à identifier ce formulaire.**",
+    "invalid_custom_id": "> ❌ ** ** **Une erreur est survenue lors du traitement de l'interaction.**\nSi cette erreur persiste, veuillez contacter les développeurs."
+  }
+}

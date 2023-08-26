@@ -1,0 +1,9 @@
+{
+  "path": "features::xp",
+  "data": {
+    "lvl_up": "> `{username}` a atteint le niveau **{lvl}** !",
+    "rank": "rang",
+    "lvl": "lvl",
+    "disabled": "> ❌ ** ** **Cette fonctionnalité n'est pas activée.**"
+  }
+}

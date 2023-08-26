@@ -1,0 +1,5 @@
+#!/bin/bash
+# shellcheck disable=SC2046
+
+PID=$(ps -aux | pgrep mio_engine)
+ps -p $PID -o pid,user,%cpu,rss,cmd

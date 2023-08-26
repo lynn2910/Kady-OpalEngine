@@ -1,0 +1,9 @@
+/target
+/**/Cargo.lock
+.idea
+.vscode
+archive.saf
+pid
+blep.js
+lines_count.js
+_debug

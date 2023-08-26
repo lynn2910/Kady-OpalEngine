@@ -1,0 +1,52 @@
+[users]
+get = "SELECT * FROM `users` LEFT JOIN user_badges ON users.id = user_badges.user LEFT JOIN user_biography ON users.id = user_biography.user LEFT JOIN user_xp ON users.id = user_xp.user WHERE users.id = ?;"
+ensure = "INSERT IGNORE INTO `users` (id) VALUES (?);"
+create = "INSERT INTO `users` (id) VALUES (?);"
+ensure_get = "INSERT IGNORE INTO `users` (`id`) VALUES (?); SELECT * FROM `users` WHERE `id` = ?;"
+update_last_seen = "UPDATE `users` SET `last_seen` = ? WHERE `id` = ?;"
+update_last_edited_timestamp = "UPDATE `users` SET `last_edited_timestamp` = ? WHERE `id` = ?;"
+
+[users.marriage]
+get = "SELECT * FROM `user_marriages` WHERE `user1` = ? OR `user2` = ?;"
+
+[users.reputation]
+get = "SELECT * FROM `user_cookies` WHERE `user_to` = ?;"
+get_guild = "SELECT * FROM `user_reputations` WHERE `user_to` = ? AND `guild` = ? ORDER BY `timestamp`;"
+get_last = "SELECT * FROM `user_cookies` WHERE `user_to` = ? ORDER BY `timestamp` DESC LIMIT 1;"
+get_last_guild = "SELECT * FROM `user_cookies` WHERE `guild`= ? AND `user_to` = ? ORDER BY `timestamp` DESC LIMIT 1;"
+get_top_10_global = "SELECT user_to, COUNT(*) as cookies FROM user_cookies GROUP BY user_to ORDER BY cookies DESC LIMIT 10;"
+get_top_10_guild = "SELECT user_to, COUNT(*) as cookies FROM user_cookies WHERE guild = ? GROUP BY user_to ORDER BY cookies DESC LIMIT 10;"
+get_user_rank_global = "SELECT user_to, cookies, user_rank FROM (SELECT user_to, cookies, RANK() OVER (ORDER BY cookies DESC) as user_rank FROM ( SELECT user_to, COUNT(*) as cookies FROM user_cookies GROUP BY user_to ) as r ) as ranked_users WHERE user_to = ?;"
+get_user_rank_guild = "SELECT user_to, cookies, user_rank FROM (SELECT user_to, cookies, RANK() OVER (ORDER BY cookies DESC) as user_rank FROM (SELECT user_to, COUNT(*) as cookies FROM user_cookies WHERE guild = ? GROUP BY user_to) as r) as ranked_users WHERE user_to = ?;"
+
+
+
+
+[guilds]
+get = "SELECT guilds.*, gcg.enabled AS ghostping_enabled, gcg.channel AS ghostping_channel, gcj.enabled AS join_enabled, gcj.channel AS join_channel, gcj.message AS join_message, gcl.enabled AS leave_enabled, gcl.channel AS leave_channel, gcl.message AS leave_message, g.enabled AS logs_enabled, gcs.enabled AS suggestions_enabled, gcs.channel AS suggestions_channel, x.enabled AS xp_enabled, x.cooldown AS xp_cooldown, x.algorithm as xp_algo, x.channel as xp_channel, x.message as xp_message, gc.enabled AS captcha_enabled, gc.channel AS captcha_channel, gc.role AS captcha_role, gc.model AS captcha_model, gc.level AS captcha_level, ar.enabled as auto_role_enabled, gcci.enabled as citation_enabled, gcci.channel as citation_channel FROM guilds LEFT OUTER JOIN guild_config_ghostping gcg on guilds.id = gcg.guild_id LEFT OUTER JOIN guild_config_join gcj on guilds.id = gcj.guild_id LEFT OUTER JOIN guild_config_leave gcl on guilds.id = gcl.guild_id LEFT OUTER JOIN guild_config_logs g on guilds.id = g.guild_id LEFT OUTER JOIN guild_config_suggestions gcs on guilds.id = gcs.guild_id LEFT OUTER JOIN guild_config_xp x on guilds.id = x.guild_id LEFT OUTER JOIN guild_config_captcha gc on guilds.id = gc.guild_id LEFT OUTER JOIN guild_config_auto_roles ar on guilds.id = ar.guild_id LEFT OUTER JOIN guild_config_citation gcci on guilds.id = gcci.guild_id WHERE id = ?;"
+ensure = "INSERT IGNORE INTO `guilds` (id) VALUES (?);"
+create = "INSERT INTO `guilds` (id) VALUES (?);"
+ensure_get = "INSERT IGNORE INTO `guilds` (`id`) VALUES (?); SELECT guilds.*, gcg.enabled AS ghostping_enabled, gcg.channel AS ghostping_channel, gcj.enabled AS join_enabled, gcj.channel AS join_channel, gcj.message AS join_message, gcl.enabled AS leave_enabled, gcl.channel AS leave_channel, gcl.message AS leave_message, gcx.enabled AS xp_enabled, g.enabled AS logs_enabled, gcs.enabled AS suggestions_enabled, gcs.channel AS suggestions_channel, x.enabled AS xp_enabled, x.cooldown AS xp_cooldown, x.default_lvl AS xp_default_lvl, x.default_xp AS xp_default_xp, gc.enabled AS captcha_enabled, gc.channel AS captcha_channel, gc.role AS captcha_role FROM guilds LEFT JOIN guild_config_ghostping gcg on guilds.id = gcg.guild_id LEFT JOIN guild_config_join gcj on guilds.id = gcj.guild_id LEFT JOIN guild_config_leave gcl on guilds.id = gcl.guild_id LEFT JOIN guild_config_xp gcx on guilds.id = gcx.guild_id LEFT JOIN guild_config_logs g on guilds.id = g.guild_id LEFT JOIN guild_config_suggestions gcs on guilds.id = gcs.guild_id LEFT JOIN guild_config_xp x on guilds.id = x.guild_id LEFT JOIN guild_config_captcha gc on guilds.id = gc.guild_id WHERE id = ?;"
+update_last_seen = "UPDATE `guilds` SET `last_seen` = ? WHERE `id` = ?;"
+update_last_edited_timestamp = "UPDATE `guilds` SET `last_edited_timestamp` = ? WHERE `id` = ?;"
+
+[guilds.logs]
+create = "INSERT INTO `guild_logs` (`guild`, `author`, `action`, `target`, `reason`, `timestamp`) VALUES (?, ?, ?, ?, ?, ?);"
+get = "SELECT * FROM `guild_logs` WHERE `guild` = ?;"
+
+[guilds.channel_logs]
+get_all = "SELECT * FROM `guild_channel_logs` WHERE `guild_id` = ?;"
+get_by_type = "SELECT * FROM `guild_channel_logs` WHERE `guild_id` = ? AND `log_type` = ?;"
+push = "INSERT INTO `guild_channel_logs` (`guild_id`, `channel`, `log_type`) VALUES (?, ?, ?);"
+update = "UPDATE `guild_channel_logs` SET `channel` = ?, `log_type` = ? WHERE `guild_id` = ?;"
+
+[guilds.xp]
+get = "SELECT * FROM `guild_users_xp` WHERE `guild_id` = ? AND `user_id` = ?;"
+ensure = "INSERT IGNORE INTO `guild_users_xp` (`guild_id`, `user_id`) VALUES (?, ?);"
+add_xp = "UPDATE `guild_users_xp` SET `xp` = `xp` + ? WHERE `guild_id` = ? AND `user_id` = ?;"
+get_rank = "SELECT * FROM (SELECT *, rank() over (order by xp desc) rn FROM guild_users_xp WHERE guild_id = ? ORDER BY xp DESC) as `*2` WHERE user_id = ?;"
+get_top_10 = "SELECT * FROM guild_users_xp WHERE guild_id = ? ORDER BY xp DESC LIMIT 10;"
+
+[guilds.auto_roles]
+get_all = "SELECT * FROM `guild_auto_roles` WHERE `guild_id` = ?;"
+get_single = "SELECT * FROM `guild_auto_roles` WHERE `guild_id` = ? AND `role_id` = ?;"

@@ -1,0 +1,8 @@
+#!/bin/bash
+PID=$(pgrep mio_engine)
+PAGESIZE=$(getconf PAGE_SIZE)
+STATM=($(cat /proc/$PID/statm))
+
+JSON='{"Size":'$((STATM[0] * PAGESIZE / 1024))',"RSS":'$((STATM[1] * PAGESIZE / 1024))',"Shared":'$((STATM[2] * PAGESIZE / 1024))',"Text":'$((STATM[3] * PAGESIZE / 1024))',"Lib":'$((STATM[4] * PAGESIZE / 1024))',"Data":'$((STATM[5] * PAGESIZE / 1024))',"Dirty":'$((STATM[6] * PAGESIZE / 1024))',"Total":'$((STATM[0] * PAGESIZE / 1024))'}'
+
+echo $JSON | tr -d ' '

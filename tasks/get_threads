@@ -1,0 +1,3 @@
+#!/bin/bash
+PID=$(pgrep mio_engine)
+cat /proc/"$PID"/status | grep Threads | awk '{print $2}'

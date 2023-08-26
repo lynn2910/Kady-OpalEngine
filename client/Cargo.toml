@@ -1,0 +1,48 @@
+[package]
+name = "client"
+version = "0.1.104"
+edition = "2021"
+authors = ["Sedorikku"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+# More informations will be logged
+debug = []
+
+[dependencies]
+serde_json = { workspace = true }
+url = "2.3.1"
+futures-util = "0.3.28"
+futures-channel = "0.3.28"
+log = { workspace = true }
+async-trait = "0.1.68"
+openssl = { version = "0.10.54", features = ["vendored"] }
+async-std = "1.12.0"
+
+[dependencies.sqlx]
+workspace = true
+features = ["macros", "mysql", "default", "runtime-tokio-native-tls", "chrono"]
+
+[dependencies.tokio]
+workspace = true
+features = ["full"]
+
+[dependencies.chrono]
+workspace = true
+features = ["serde"]
+
+[dependencies.tokio-tungstenite]
+version = "0.20.0"
+features = ["default", "native-tls", "handshake", "stream"]
+
+[dependencies.serde]
+workspace = true
+features = ["derive", "default", "serde_derive"]
+
+[dependencies.reqwest]
+workspace = true
+features = ["json", "serde_json", "native-tls", "multipart"]
+
+[dependencies.error]
+path = "../error"

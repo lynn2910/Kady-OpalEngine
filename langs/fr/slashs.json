@@ -1,0 +1,13 @@
+{
+  "path": "slashs",
+  "data": {
+    "ping": {
+      "booting": "> \uD83D\uDE80 ** ** **Le démarrage n'est pas terminé.**\nVeuillez réessayer dans 1m.",
+      "content": "> \uD83C\uDFD3 ** ** **J'ai une latence de** `{ping}ms` (shard n°{shard_id}).",
+      "button": {
+        "label": "Moyenne des latences: {median}ms",
+        "emoji": "\uD83E\uDD80"
+      }
+    }
+  }
+}

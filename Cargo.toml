@@ -1,0 +1,37 @@
+[workspace]
+members = [
+    # The main process
+    "core",
+    # Discord client
+    "client",
+    # Configuration manager
+    "config",
+    # The error handler
+    "error",
+    # Archive manager
+    "archive",
+    # The translator
+    "translation",
+    # The database
+    "database",
+    # The CLI
+    "cli",
+    # The feature manager
+    "features",
+    # The API
+    "api"
+]
+resolver = "2"
+
+
+[workspace.dependencies]
+sqlx = "0.7.1"
+serde = "1.0.177"
+serde_json = "1.0.104"
+chrono = "0.4.26"
+log = "0.4.19"
+tokio = "1.29.1"
+reqwest = "0.11.18"
+rand = "0.8.5"
+regex = "1.9.1"
+uuid = "1.4.1"

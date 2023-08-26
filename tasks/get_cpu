@@ -1,0 +1,17 @@
+#!/bin/bash
+
+PID=$(pgrep mio_engine)
+UTIME=$(awk '{print $14}' /proc/$PID/stat)
+STIME=$(awk '{print $15}' /proc/$PID/stat)
+UPTIME=$(awk '{print $1}' /proc/uptime)
+HZ=$(getconf CLK_TCK)
+
+export BC_PREC=6
+CPU_USAGE=$(echo "scale=6; 100 * (($UTIME + $STIME) / $HZ) / $UPTIME" | bc)
+
+if (( $(awk 'BEGIN {print ('$CPU_USAGE' < 1 && '$CPU_USAGE' > 0)}') )); then
+    CPU_USAGE=$(echo $CPU_USAGE | awk '{printf("%f",$0);}')
+fi
+
+JSON='{"CPUUsage":'$CPU_USAGE',"UTime":'$UTIME',"STime":'$STIME'}'
+echo $JSON | tr -d ' '

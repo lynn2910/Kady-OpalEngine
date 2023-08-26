@@ -1,0 +1,38 @@
+# The intents to use for the bot
+intents = 37379
+version = "3.1.1"
+build = "63ecf7fdccbf4654950d34a5eca6a0af"
+langs = "C:/Users/cedic/Code/kady/OpalEngine/langs"
+pid = "C:/Users/cedic/Code/kady/OpalEngine/pid"
+dynamic_requests = "C:/Users/cedic/Code/kady/OpalEngine/requests.toml"
+
+[security]
+archive_path = "C:/Users/cedic/Code/kady/OpalEngine/archive.saf"
+
+[api]
+# Number of times to retry a request before giving up
+retry_limit= 5
+# Number of seconds to wait before retrying a request
+close_timeout = 5000
+
+[status]
+# Available types:
+# Game = 0
+# Streaming = 1
+# Listening = 2
+# Watching = 3
+# Custom = 4
+# Competing = 5
+
+alternate = [
+    { name = "les oiseaux chanter 🐦",  type = 2, presence = "online" },
+    { name = "fait des courses 🛒",     type = 3, presence = "online" },
+    { name = "{users} utilisateurs 👥", type = 3, presence = "online" },
+    { name = "version {version} 📦",    type = 0, presence = "online" },
+    { name = "{guilds} serveurs 🔎",    type = 3, presence = "online" },
+    { name = "lana chanter 🎶",         type = 2, presence = "online" }
+]
+dev = { name = "🛠️ Opération d'un développeur en cours", type = 0, presence = "dnd" }
+maintenance = { name = "🔧 Maintenance", type = 0, presence = "idle" }
+unavailable = { name = "Service indisponible 🚀", type = 0, presence = "offline" }
+interval = 300 # In seconds; 300 = 5 minutes
