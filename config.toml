@@ -14,6 +14,9 @@ archive_path = "C:/Users/cedic/Code/kady/OpalEngine/archive.saf"
 retry_limit= 5
 # Number of seconds to wait before retrying a request
 close_timeout = 5000
+declared_files = [
+    ["hello.txt", "C:/Users/cedic/Code/kady/OpalEngine/api/public/hello.txt", "plain/text"]
+]
 
 [status]
 # Available types:

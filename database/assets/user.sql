@@ -62,13 +62,15 @@ CREATE OR REPLACE TABLE `user_biography`
     PRIMARY KEY (user)
 );
 
+
+
 # Contain each cookie given by a user to another.
 CREATE OR REPLACE TABLE user_cookies
 (
     # The user_from is the user that give the reputation.
-    user_from VARCHAR(32),
+    user_from VARCHAR(32) NOT NULL,
     # The user_to is the user that receive the reputation.
-    user_to   VARCHAR(32),
+    user_to   VARCHAR(32) NOT NULL,
     guild     VARCHAR(32),
     # The timestamp is used primarily for the reputation cooldown.
     timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -78,6 +80,19 @@ CREATE OR REPLACE TABLE user_cookies
     # The user_from and user_to must be different.
     CHECK (user_from != user_to)
 );
+
+
+CREATE OR REPLACE TABLE user_cookie_nuggets
+(
+    user VARCHAR(32) NOT NULL,
+    nuggets INT UNSIGNED NOT NULL DEFAULT 0,
+    PRIMARY KEY (user),
+
+    FOREIGN KEY (user) REFERENCES users (id) ON DELETE CASCADE
+);
+
+
+
 
 INSERT INTO user_cookies (user_from, user_to, guild)
 VALUES

@@ -9,7 +9,6 @@ mod assets;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
-use clap::builder::Str;
 use log::{error, info, warn};
 use tokio::sync::RwLock;
 use api::{Api, ApiState, SecurityContainer};
@@ -158,6 +157,8 @@ impl EventHandler for Handler {
     async fn start(&self, ctx: Context) {
         info!(target: "client", "Client started");
 
+        // let _ = interaction_constructor::instance_trigger(ctx.skynet.clone(), ctx.cache.clone()).await;
+
         // REMOVE ABSOLUTELY
         // {
         //     let _ = ctx.skynet.send_message(
@@ -229,7 +230,7 @@ impl EventHandler for Handler {
                 }
             },
             InteractionType::ModalSubmit => {
-                println!("Interaction modal submit");
+                scripts::modal_received(&ctx, &payload).await;
             },
             _ => {
                 println!("Interaction type {:?}", payload.interaction.interaction_type);
@@ -333,6 +334,13 @@ async fn start(cli_args: CliArgs) {
 
     }
 
+    // start the nugget updater
+    crates::cookies::nuggets::nugget_updater_task(
+        database.clone(),
+        client.http_manager.client.clone(),
+        client.cache.clone()
+    );
+
     // register events
     client.event_handler(Handler);
 
@@ -347,7 +355,10 @@ async fn start(cli_args: CliArgs) {
                 SecurityContainer::new(
                     client.shard_manager.clone(),
                     database
-                )
+                ),
+                Arc::new(RwLock::new(
+                    config.read().await.api.declared_files.clone()
+                ))
             ))
         );
         api::start(&mut informations, format!("{}:{}", cli_args.domain, cli_args.port).as_str());

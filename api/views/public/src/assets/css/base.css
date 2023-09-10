@@ -1,0 +1,10 @@
+button {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex-shrink: 0;
+  text-align: center;
+  border: None;
+  border-radius: 28px;
+}
+/*# sourceMappingURL=base.css.map */

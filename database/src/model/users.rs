@@ -61,9 +61,9 @@ impl User {
     }
 
     /// Ensure that a user exists in the database
-    pub async fn ensure(pool: &MySqlPool, request: &str, id: String) -> Result<()> {
+    pub async fn ensure<T: ToString>(pool: &MySqlPool, request: &str, id: T) -> Result<()> {
         let query = sqlx::query(request)
-            .bind(id.clone());
+            .bind(id.to_string());
 
         match query.execute(pool).await {
             Ok(_) => Ok(()),
@@ -130,8 +130,8 @@ impl Marriage {
 }
 
 /// Represent a reputation that was given
-#[derive(sqlx::FromRow, Debug)]
-pub struct Reputation {
+#[derive(sqlx::FromRow, Debug, Eq, PartialEq)]
+pub struct UserCookie {
     /// The ID of the player who gave the reputation
     pub user_from: String,
     /// The ID of the reputation who has received the point
@@ -139,25 +139,37 @@ pub struct Reputation {
     /// The timestamp when the point was given
     pub timestamp: DateTime<Utc>,
     /// The guild where the point was given
-    pub guild: String
+    pub guild: Option<String>
 }
 
 #[derive(sqlx::FromRow, Debug)]
-pub struct ReputationRanking {
+pub struct CookieRanking {
     pub user_to: String,
     pub cookies: i64,
 }
 
 #[derive(sqlx::FromRow, Debug)]
-pub struct ReputationRankingRank {
+pub struct CookiesNumber {
+    pub count: i64,
+}
+
+#[derive(sqlx::FromRow, Debug)]
+pub struct CookieTopRank {
     pub user_to: String,
     pub cookies: i64,
     pub user_rank: i64,
 }
 
-impl Reputation {
+
+#[derive(sqlx::FromRow, Debug)]
+pub struct UserNuggets {
+    pub user: String,
+    pub nuggets: u64
+}
+
+impl UserCookie {
     /// Get all the reputation that a user has received
-    pub async fn get_reputation<T: ToString>(pool: &MySqlPool, request: &str, user: T) -> Result<Vec<Self>> {
+    pub async fn get_all_cookies<T: ToString>(pool: &MySqlPool, request: &str, user: T) -> Result<Vec<Self>> {
         let query = sqlx::query_as::<_, Self>(request)
             .bind(user.to_string());
 
@@ -168,15 +180,15 @@ impl Reputation {
     }
 
     /// Get the number of reputation that a user has received
-    pub async fn get_reputation_count<T: ToString>(pool: &MySqlPool, request: &str, user: T) -> Result<usize> {
-        match Self::get_reputation(pool, request, user).await {
+    pub async fn get_cookies_count<T: ToString>(pool: &MySqlPool, request: &str, user: T) -> Result<usize> {
+        match Self::get_all_cookies(pool, request, user).await {
             Ok(reputations) => Ok(reputations.len()),
             Err(e) => Err(e)
         }
     }
 
     /// Get the last reputation that a user has received if any
-    pub async fn get_last_reputation<T: ToString>(pool: &MySqlPool, request: &str, user: T) -> Result<Option<Self>> {
+    pub async fn get_last_cookie<T: ToString>(pool: &MySqlPool, request: &str, user: T) -> Result<Option<Self>> {
         let query = sqlx::query_as::<_, Self>(request)
             .bind(user.to_string());
 
@@ -186,7 +198,7 @@ impl Reputation {
         }
     }
 
-    pub async fn get_in_guild_reputation<T: ToString>(pool: &MySqlPool, request: &str, user: T, guild: T) -> Result<Vec<Self>> {
+    pub async fn get_cookies_from_guild<T: ToString>(pool: &MySqlPool, request: &str, user: T, guild: T) -> Result<Vec<Self>> {
         let query = sqlx::query_as::<_, Self>(request)
             .bind(user.to_string())
             .bind(guild.to_string());

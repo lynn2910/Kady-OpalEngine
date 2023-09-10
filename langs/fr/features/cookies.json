@@ -1,0 +1,61 @@
+{
+  "path": "features::cookies",
+  "data": {
+    "new_cookie_notification": "> 🎗️ `{user}` **vous a donné(e)** {new} **cookies**\nVous en possédez désormais **{cookies}**.",
+    "new_cookies_from_nuggets": "> 🎗️ {new} **cookies ont été fabriqués avec vos pépites obtenues**\nVous en possédez désormais **{cookies}**.",
+    "no_category_provided": "> ❌ ** ** **Vous n'avez spécifié(e) aucune sous-commande.**",
+    "invalid_category": "> ❌ ** ** **Cette sous-commande n'existe pas.**",
+    "cookies_number_as_float": "> ❌ ** ** **Vous ne pouvez pas utiliser un nombre à virgule.**\nDécouper des cookies est impossible, vous allez mettre des miettes partout !",
+    "cookies_number_null": "> ❌ ** ** `0` **n'est pas un nombre de cookies acceptable.**",
+    "not_yourself": "> ❌ ** ** **Cette commande ne fonctionne pas sur vous-même.**",
+    "not_enough_cookies": "> ❌ ** ** **Vous n'avez pas assez de cookies.**",
+    "cookies_given": "> 🍪 ** ** **Vous avez donné** {cookies} **cookies à** <@{user}>.\nMerci d'être si généreux 😁",
+    "quiz": {
+      "give_question": "> ❓ ** ** **Votre question du jour est:**\n{question}",
+      "already_given": "> 🤔 ** ** **Je crois que vous avez déjà répondu à la question du jour.**\nRevenez demain ! Je prépare une question rien que pour vous :D",
+      "answer_button": "Répondre",
+      "questions": {
+        "4d48092d-431f-4637-95d8-e92baec87add": "Quelle reine légendaire était associée à l'Angleterre durant le Moyen Âge et est connue pour sa rivalité avec Marie Stuart ?",
+        "1451506f-9a14-4171-9291-0f3ecc301b6d": "Qui était le premier président des États-Unis ?",
+        "07084e98-3a4a-4779-8d53-f0459f646e0d": "Quel est le plus grand organe du corps humain ?",
+        "b682d2f7-b905-4503-809b-1acfafccb60a": "Quelle est la formule chimique de l'eau ?",
+        "7199e76a-b4e3-4e75-8ba2-483b6d15276d": "Quelle planète du système solaire est surnommée la \"planète rouge\" ?",
+        "059c2674-6c23-4dfa-9590-ae4b33900fad": "Quel est le plus grand océan du monde ?",
+        "c8164fce-e7e0-4e44-ad97-b95fdf3e6522": "Quelle est la capitale du Japon ?",
+        "f7d12bdf-c83c-47f7-ba9b-1bca1a1df71b": "Quelle chaîne de montagnes s'étend à travers toute la longueur de l'Amérique du Sud ?",
+        "1b3ac869-3cac-4e91-a5b8-85ab5c43ae11": "Quel film a remporté l'Oscar du meilleur film en 2020 ?",
+        "0e8b5a5f-2daa-4870-90c5-0eedbde7ce0d": "Quel super-héros est connu sous le nom de l'homme d'acier ?",
+        "37b6b4c1-9d77-4f8b-ae5d-a60d79a40864": "Qui est l'auteur de la série de livres \"Harry Potter\" ?",
+        "54aa4ff2-2468-4b53-8972-b25f01a05206": "Qui a peint la Joconde ?",
+        "9a325d2c-3250-4593-aaed-03c5a00b18ba": "Quel dramaturge est l'auteur de la pièce \"Roméo et Juliette\" ?",
+        "e3494dac-eb64-4e2f-898d-f432433ae7c9": "Quel écrivain a écrit \"1984\" ?",
+        "f200e221-4d35-4302-95d5-9a0a189589f9": "Quel sport est associé à Wimbledon ?",
+        "09093a9a-e7f6-42a5-80db-cf673ec38954": "Quel pays a remporté le plus de coupes du monde de football ?",
+        "24c1e19f-e7ab-40ef-b735-fee7ae480292": "Dans quel sport Michael Jordan s'est-il illustré ?",
+        "57bc0dfe-85da-434d-87ef-0f80dc0359e6": "Quel groupe britannique est célèbre pour ses chansons \"Bohemian Rhapsody\" et \"We Will Rock You\" ?",
+        "0ef90b00-fb58-4688-963d-3afa0e6bb769": "Qui est surnommé le \"Roi de la Pop\" ?",
+        "ed40c8c6-0195-4d73-8ba2-5b2e044ecfd5": "Quel compositeur autrichien est l'auteur de la Neuvième Symphonie ?",
+        "1a6c14d8-52f4-4363-912d-9d3b7145e5f2": "Quel fondateur de Microsoft est l'une des personnes les plus riches au monde ?",
+        "78b6bc92-3711-4e8d-8ec6-b9e621c643ed": "Quelle entreprise est derrière la création de l'iPhone ?",
+        "d536003b-6a69-45ea-aaaa-0467c7120f95": "Quelle est la signification de l'acronyme \"URL\" ?",
+        "de64edd9-1485-477d-90fd-27d2cdfd45b3": "Quelle est la capitale de France ?",
+        "712169e2-fe34-41f3-9858-48185bd623c6": "Quelle planète est la plus proche du soleil ?",
+        "225f55db-869c-4fe3-966d-339a44e23442": "Question: Quel est le plus grand océan du monde ?",
+        "ca9619d1-5ef8-402b-b4d1-0527969bc620": "Quel gaz compose la majorité de l'atmosphère terrestre ?",
+        "291ba2d4-3ce1-4079-acda-34d5c9f8cf5e": "Combien de continents y a-t-il sur la Terre ?",
+        "04b4993e-8618-44bc-9e4b-0bbce15c183f": " Quel est le symbole chimique de l'or ?",
+        "ca2d9b81-59ec-4d94-a847-a4f289c5cfc2": " Qui a peint \"La Nuit étoilée\" ?"
+      },
+      "modal": {
+        "question": "Quelle est votre réponse ?",
+        "placeholder": "Votre réponse ici",
+        "title": "Obtenez votre cookie 🍪"
+      },
+      "answers": {
+        "good": "> 👌 ** ** **Vous ne vous êtes pas trompés !**\nVous avez gagnez `1` cookie 🍪",
+        "no_this_time": "> 😔 ** ** **C'est dommage, tu y étais presque... Retente demain !**\nMais tu as gagné 3 pépites (encore 3 pour avoir un cookie 🍪)",
+        "no_question_assigned": "> ❌ ** ** Vous n'avez aucune question associée à votre compte, **avez-vous utilisé(e) la commande** `/cookies daily` **?**"
+      }
+    }
+  }
+}

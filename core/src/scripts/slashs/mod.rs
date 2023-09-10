@@ -8,6 +8,7 @@ pub(crate) mod citation;
 pub(crate) mod admin;
 pub(crate) mod xp;
 pub(crate) mod top;
+pub(crate) mod cookies;
 
 #[allow(unused)]
 pub async fn internal_error(ctx: &Context, interaction: &Interaction, local: impl ToString, code: impl ToString) {

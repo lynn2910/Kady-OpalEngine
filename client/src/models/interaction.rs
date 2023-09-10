@@ -4,7 +4,7 @@ use serde_json::{json, Number, Value};
 use error::{Error, ModelError, Result};
 use crate::manager::http::{ApiResult, Http, HttpRessource};
 use crate::models::channel::{Channel, ChannelId, ChannelKind};
-use crate::models::components::message_components::ComponentType;
+use crate::models::components::message_components::{Component, ComponentType};
 use crate::models::guild::{GuildId, GuildMember, Role};
 use crate::models::message::{Attachment, AttachmentBuilder, Message, MessageBuilder, MessageFlags};
 use crate::models::Snowflake;
@@ -71,7 +71,6 @@ pub struct Interaction {
 
 impl HttpRessource for Interaction {
     fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-
         let id = if let Some(id) = raw.get("id") {
             if let Some(id) = id.as_str() {
                 Snowflake::from_raw(id.into(), shard)?
@@ -227,6 +226,18 @@ impl Interaction {
         ).await
     }
 
+    pub async fn reply_with_modal(&self, http: &Http, content: MessageBuilder) -> Result<ApiResult<()>> {
+        let json = content.to_json();
+
+        http.reply_interaction(
+            &self.id,
+            &self.token,
+            InteractionCallbackType::Modal,
+            json,
+            None
+        ).await
+    }
+
     pub async fn reply_with_files(&self, http: &Http, content: MessageBuilder, files: Vec<AttachmentBuilder>) -> Result<ApiResult<()>> {
         let json = content.to_json();
 
@@ -335,6 +346,7 @@ pub struct InteractionData {
 
     /// The type of the component
     pub component_type: Option<ComponentType>,
+    pub components: Option<Vec<Component>>,
     /// The custom ID of the component
     pub custom_id: Option<String>
 }
@@ -412,6 +424,20 @@ impl HttpRessource for InteractionData {
             None
         };
 
+        let components = if let Some(components) = raw.get("components") {
+            if let Some(components) = components.as_array() {
+                let mut components_vec = Vec::new();
+                for component in components {
+                    components_vec.push(Component::from_raw(component.clone(), shard)?);
+                }
+                Some(components_vec)
+            } else {
+                return Err(Error::Model(ModelError::InvalidPayload("Failed to parse interaction components".into())))
+            }
+        } else {
+            None
+        };
+
         Ok(Self {
             id,
             name,
@@ -420,7 +446,8 @@ impl HttpRessource for InteractionData {
             resolved,
             options,
             component_type,
-            custom_id
+            custom_id,
+            components
         })
     }
 }
@@ -692,13 +719,26 @@ impl HttpRessource for InteractionDataOption {
 }
 
 /// Value of the option resulting from the user input
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum InteractionDataOptionValue {
     String(String),
     Integer(i64),
     Double(f64),
     Boolean(bool),
 }
+
+impl ToString for InteractionDataOptionValue {
+    fn to_string(&self) -> String {
+        match self {
+            Self::String(s) => s.to_string(),
+            Self::Integer(i) => i.to_string(),
+            Self::Double(f) => f.to_string(),
+            Self::Boolean(b) => b.to_string()
+        }
+    }
+}
+
+impl Eq for InteractionDataOptionValue {}
 
 impl HttpRessource for InteractionDataOptionValue {
     fn from_raw(raw: Value, _: Option<u64>) -> Result<Self> {
@@ -994,7 +1034,7 @@ impl ApplicationCommandOption {
 
     pub fn add_name_localization(mut self, lang: impl ToString, name: impl ToString) -> Self {
         if self.name_localizations.is_none() {
-            self.options = Some(Vec::new())
+            self.name_localizations = Some(HashMap::new())
         }
 
         self.name_localizations.as_mut().unwrap().insert(lang.to_string(), name.to_string());

@@ -23,6 +23,7 @@ use crate::constants::DEFAULT_LANG;
 
 mod slashs;
 mod buttons;
+mod modal;
 
 /// Get the guild locale, or the default one if the guild locale is not supported.
 pub(crate) fn get_guild_locale(guild_locale: &Option<String>) -> String {
@@ -67,6 +68,7 @@ pub(crate) async fn slash_command_received(ctx: &Context, payload: &InteractionC
         "admin_memory_report" => slashs::admin::admin_memory_report::triggered(ctx, payload).await,
         "guild_rank" => slashs::xp::guild_rank::triggered(ctx, payload).await,
         "top" => slashs::top::triggered(ctx, payload).await,
+        "cookies" => slashs::cookies::triggered(ctx, payload).await,
         _ => {
             let local = get_guild_locale(&payload.interaction.guild_locale);
             if let Err(e) = payload.interaction.reply(&ctx.skynet, unknown_command(local)).await {
@@ -100,11 +102,46 @@ pub(crate) async fn button_received(ctx: &Context, payload: &InteractionCreate){
     match custom_id.as_str() {
         "CAPTCHA_REQUEST" => buttons::captcha_request::triggered(ctx, payload, query_string).await,
         "CAPTCHA_TRY" => buttons::captcha_try::triggered(ctx, payload, query_string).await,
+        "ANSWER_COOKIES_QUIZ" => buttons::cookies::triggered(ctx, payload).await,
         _ => {
             if payload.interaction.channel_id.is_none() { return; }
             let _ = payload.interaction.reply(
                 &ctx.skynet,
                 unknown_button(get_guild_locale(&payload.interaction.guild_locale))
+            ).await;
+        }
+    }
+}
+
+pub(crate) async fn modal_received(ctx: &Context, payload: &InteractionCreate){
+    let modal = payload.interaction.data.as_ref().unwrap();
+
+    let (custom_id, query) = {
+        let custom_id = modal.custom_id.clone().unwrap_or(String::new());
+        let mut split = custom_id.splitn(2, '&');
+
+        (
+            split.next().unwrap_or(Default::default()).to_string(),
+            split.next().unwrap_or(Default::default()).to_string(),
+        )
+    };
+
+    #[allow(unused_variables)]
+    let query_string = match querify(query) {
+        Ok(q) => q,
+        Err(e) => {
+            error!(target: "InteractionHandler", "The runtime received an error while querying the modal custom_id: {e:#?}");
+            return;
+        }
+    };
+
+    match custom_id.as_str() {
+        "COOKIE_USER_QUIZ_ANSWER" => modal::cookie_quiz_answer::triggered(ctx, payload).await,
+        _ => {
+            if payload.interaction.channel_id.is_none() { return; }
+            let _ = payload.interaction.reply(
+                &ctx.skynet,
+                unknown_modal(get_guild_locale(&payload.interaction.guild_locale))
             ).await;
         }
     }
@@ -118,6 +155,11 @@ fn unknown_command(local: String) -> MessageBuilder {
 /// Return a MessageBuilder for an unknown component
 fn unknown_button(local: String) -> MessageBuilder {
     MessageBuilder::new().set_content(message!(local, "errors::unknown_button")).set_ephemeral(true)
+}
+
+
+fn unknown_modal(local: String) -> MessageBuilder {
+    MessageBuilder::new().set_content(message!(local, "errors::unknown_modal")).set_ephemeral(true)
 }
 
 
@@ -170,6 +212,7 @@ pub fn get_user_id(user: &Option<User>, member: &Option<GuildMember>) -> Option<
     None
 }
 
+#[allow(dead_code)]
 pub async fn get_application(ctx: &Context) -> Option<Application> {
     {
         let cache = ctx.cache.read().await;

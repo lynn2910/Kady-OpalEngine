@@ -62,10 +62,10 @@ mod categories {
     use client::models::message::MessageBuilder;
     use database::Database;
     use database::model::guild::{Guild, GuildUserXp, UserXpRank};
-    use database::model::users::ReputationRankingRank;
+    use database::model::users::CookieTopRank;
     use translation::fmt::formatter::Formatter;
     use translation::message;
-    use crate::scripts::{get_application, get_client_user, get_guild, get_user, get_user_id};
+    use crate::scripts::{get_client_user, get_guild, get_user, get_user_id};
     use crate::scripts::slashs::{internal_error, internal_error_deferred};
     use crate::scripts::slashs::top::cannot_get_guild_data;
 
@@ -254,7 +254,7 @@ mod categories {
             };
 
         let mut top_10 = {
-            let query = sqlx::query_as::<_, database::model::users::ReputationRanking>(requests.users.reputation.get_top_10_global.as_str());
+            let query = sqlx::query_as::<_, database::model::users::CookieRanking>(requests.users.cookies.get_top_10_global.as_str());
 
             match query.fetch_all(&pool.to_owned()).await {
                 Ok(rankings) => rankings,
@@ -313,7 +313,7 @@ mod categories {
             let author_id = get_user_id(&payload.interaction.user, &payload.interaction.member);
 
             if let Some(user_id) = author_id {
-                match sqlx::query_as::<_, ReputationRankingRank>(requests.users.reputation.get_user_rank_global.as_str())
+                match sqlx::query_as::<_, CookieTopRank>(requests.users.cookies.get_user_rank_global.as_str())
                     .bind(user_id.to_string())
                     .fetch_optional(&pool.to_owned()).await
                 {

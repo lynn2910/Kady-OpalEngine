@@ -173,7 +173,7 @@ impl Archive {
         })
     }
 
-    /// Get the raw value from the archive
+    /// Get the views value from the archive
     pub fn get_raw(&self, key: &str) -> Option<&serde_json::Value> {
         self.body.get(key)
     }

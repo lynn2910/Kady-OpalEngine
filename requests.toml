@@ -9,8 +9,9 @@ update_last_edited_timestamp = "UPDATE `users` SET `last_edited_timestamp` = ? W
 [users.marriage]
 get = "SELECT * FROM `user_marriages` WHERE `user1` = ? OR `user2` = ?;"
 
-[users.reputation]
+[users.cookies]
 get = "SELECT * FROM `user_cookies` WHERE `user_to` = ?;"
+get_cookies_number = "SELECT COUNT(*) AS count FROM `user_cookies` WHERE `user_to` = ?;"
 get_guild = "SELECT * FROM `user_reputations` WHERE `user_to` = ? AND `guild` = ? ORDER BY `timestamp`;"
 get_last = "SELECT * FROM `user_cookies` WHERE `user_to` = ? ORDER BY `timestamp` DESC LIMIT 1;"
 get_last_guild = "SELECT * FROM `user_cookies` WHERE `guild`= ? AND `user_to` = ? ORDER BY `timestamp` DESC LIMIT 1;"
@@ -18,7 +19,13 @@ get_top_10_global = "SELECT user_to, COUNT(*) as cookies FROM user_cookies GROUP
 get_top_10_guild = "SELECT user_to, COUNT(*) as cookies FROM user_cookies WHERE guild = ? GROUP BY user_to ORDER BY cookies DESC LIMIT 10;"
 get_user_rank_global = "SELECT user_to, cookies, user_rank FROM (SELECT user_to, cookies, RANK() OVER (ORDER BY cookies DESC) as user_rank FROM ( SELECT user_to, COUNT(*) as cookies FROM user_cookies GROUP BY user_to ) as r ) as ranked_users WHERE user_to = ?;"
 get_user_rank_guild = "SELECT user_to, cookies, user_rank FROM (SELECT user_to, cookies, RANK() OVER (ORDER BY cookies DESC) as user_rank FROM (SELECT user_to, COUNT(*) as cookies FROM user_cookies WHERE guild = ? GROUP BY user_to) as r) as ranked_users WHERE user_to = ?;"
-
+get_updatable_nuggets = "SELECT * FROM `user_cookie_nuggets` WHERE nuggets > 6;"
+give_cookie = "INSERT INTO `user_cookies` (user_from, user_to) VALUE (?, ?);"
+give_cookie_in_guild = "INSERT INTO `user_cookies` (user_from, user_to, guild) VALUE (?, ?, ?);"
+give_cookie_from_system = "INSERT INTO `user_cookies` (user_from, user_to) VALUE ('806438484159102996', ?);"
+decrease_nuggets = "UPDATE `user_cookie_nuggets` SET `nuggets` = ? WHERE `user` = ?;"
+increase_nuggets = "UPDATE `user_cookie_nuggets` SET `nuggets` = nuggets + ? WHERE `user` = ?;"
+remove_cookie = "DELETE FROM `user_cookies` WHERE `user_to` = ? LIMIT 1;"
 
 
 
@@ -50,3 +57,15 @@ get_top_10 = "SELECT * FROM guild_users_xp WHERE guild_id = ? ORDER BY xp DESC L
 [guilds.auto_roles]
 get_all = "SELECT * FROM `guild_auto_roles` WHERE `guild_id` = ?;"
 get_single = "SELECT * FROM `guild_auto_roles` WHERE `guild_id` = ? AND `role_id` = ?;"
+
+[system.quiz]
+get_question = "SELECT * FROM cookies_quiz_questions WHERE id = ?;"
+get_question_all = "SELECT * FROM cookies_quiz_questions;"
+get_question_random = "SELECT * FROM cookies_quiz_questions ORDER BY RAND() LIMIT 1;"
+get_question_random_without_last = "SELECT * FROM cookies_quiz_questions WHERE id != ? ORDER BY RAND() LIMIT 1;"
+get_user = "SELECT * FROM cookies_user_quiz WHERE user = ? AND date = CURDATE();"
+insert_user = "INSERT INTO cookies_user_quiz (id, user) VALUE (?, ?);"
+update_user_question = "UPDATE cookies_user_quiz SET id = ?, date = CURDATE() WHERE user = ?;"
+question_completed = "UPDATE cookies_user_quiz SET completed = true WHERE user = ?;"
+get_all_possible_answers = "SELECT * FROM cookies_quiz_answers WHERE id = ?;"
+clear_users = "DELETE FROM cookies_quiz_answers WHERE date != CURDATE()"

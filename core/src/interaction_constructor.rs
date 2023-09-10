@@ -207,6 +207,34 @@ pub(crate) async fn instance_trigger(
         }
     }
 
+    // cookies
+    {
+        let cookies = cookies_slash();
+        let r = http.create_global_application_command(&application.id, cookies).await;
+        match r {
+            Err(e) => {
+                error!(target: "InteractionUpdater", "Failed to create slash command 'cookies': {:?}", e);
+                errors.push(
+                    RuntimeError::new(e.to_string())
+                        .with_target("create_global_application_command")
+                        .with_context("Failed to create slash command 'cookies'")
+                );
+            }
+            Ok(Err(e)) => {
+                error!(target: "InteractionUpdater", "Failed to create slash command 'cookies': {:?}", e);
+                errors.push(
+                    RuntimeError::new(e.to_string())
+                        .with_target("create_global_application_command")
+                        .with_context("Failed to create slash command 'cookies'")
+                );
+            }
+            Ok(Ok(_)) => {
+                info!(target: "InteractionUpdater", "Created slash command 'cookies'");
+                success.push("global_command::cookies".to_string());
+            }
+        }
+    }
+
     // admin_reload_commands [local]
     {
         let admin_reload_commands = admin_reload_commands_slash();
@@ -401,7 +429,7 @@ fn citation_slash() -> ApplicationCommand {
         "citation",
         "✉️ Send a beautiful citation to the whole server",
         ApplicationCommandType::ChatInput
-    ).add_localization("fr", "ping", "✉️ Envoyez une magnifique citation à tout le serveur")
+    ).add_localization("fr", "citation", "✉️ Envoyez une magnifique citation à tout le serveur")
         .set_dm_permission(false)
         .add_option(
             ApplicationCommandOption::new(ApplicationCommandOptionType::String, "citation", "Your citation here", true)
@@ -409,3 +437,51 @@ fn citation_slash() -> ApplicationCommand {
         )
 }
 
+fn cookies_slash() -> ApplicationCommand {
+    ApplicationCommand::new_global(
+        "cookies",
+        "🍪 A cookie ?",
+        ApplicationCommandType::ChatInput
+    ).add_localization("fr", "cookies", "🍪 Un cookie ?")
+        .set_dm_permission(true)
+        .add_option(
+            ApplicationCommandOption::new(
+                ApplicationCommandOptionType::SubCommand,
+                "daily",
+                "🍪 Get your daily cookie by solving an enigma",
+                false
+            )
+                .add_name_localization("fr", "journalier")
+                .add_description_localization("fr", "🍪 Obtient ton cookie quotidien en résolvant une énigme")
+        )
+        .add_option(
+        ApplicationCommandOption::new(
+            ApplicationCommandOptionType::SubCommand,
+            "donate",
+            "🍪 Give one or more cookies to your friends !",
+            false
+        )
+            .add_name_localization("fr", "donner")
+            .add_description_localization("fr", "🍪 Donne un ou plusieurs cookies à tes amis !")
+            .add_option(
+                ApplicationCommandOption::new(
+                    ApplicationCommandOptionType::User,
+                    "user",
+                    "👤 The lucky person who will receive your cookie(s)",
+                    true
+                )
+                    .add_name_localization("fr", "utilisateur")
+                    .add_description_localization("fr", "👤 Le chanceux qui va recevoir votre/vos cookie(s)")
+            )
+            .add_option(
+                ApplicationCommandOption::new(
+                    ApplicationCommandOptionType::Number,
+                    "number",
+                    "🍪 The number of cookies you want to donate",
+                    true
+                )
+                    .add_name_localization("fr", "nombre")
+                    .add_description_localization("fr", "🍪 Le nombre de cookies que vous souhaiter donné(e)")
+            )
+    )
+}

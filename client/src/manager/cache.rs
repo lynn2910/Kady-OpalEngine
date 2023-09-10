@@ -10,7 +10,7 @@ use crate::models::user::{Application, ClientUser, User, UserId};
 
 
 /// This trait is used to update ressources in the cache
-pub trait UpdateCache: Send + Sync + Clone + Eq + PartialEq {
+pub trait UpdateCache: Send + Sync + Clone {
     fn update(&mut self, from: &Self);
 }
 
@@ -91,7 +91,7 @@ impl CacheManager {
         let channel_id = match &channel {
             Channel::GuildText(channel) => channel.id.clone(),
             Channel::Dm(channel) => channel.id.clone(),
-            Channel::GuildAnnoucement(channel) => channel.id.clone(),
+            Channel::GuildAnnouncement(channel) => channel.id.clone(),
             Channel::GuildForum(channel) => channel.id.clone(),
             Channel::GuildVoice(channel) => channel.id.clone(),
             Channel::Thread(thread) => {
@@ -133,7 +133,7 @@ impl CacheManager {
                     channel.messages.insert(message.id.clone(), message.clone());
                 }
             },
-            Some(Channel::GuildAnnoucement(channel)) => {
+            Some(Channel::GuildAnnouncement(channel)) => {
                 if let Some(cache_message) = channel.messages.get_mut(&message.id) {
                     cache_message.update(&message)
                 } else {
@@ -181,7 +181,7 @@ impl CacheManager {
         match self.channels.get(channel_id) {
             Some(Channel::GuildText(channel)) => channel.messages.get(message_id),
             Some(Channel::Dm(channel)) => channel.messages.get(message_id),
-            Some(Channel::GuildAnnoucement(channel)) => channel.messages.get(message_id),
+            Some(Channel::GuildAnnouncement(channel)) => channel.messages.get(message_id),
             Some(Channel::GuildForum(channel)) => channel.messages.get(message_id),
             Some(Channel::Thread(thread)) => {
                 match thread {
@@ -202,7 +202,7 @@ impl CacheManager {
             Some(Channel::Dm(channel)) => {
                 channel.messages.remove(message_id);
             },
-            Some(Channel::GuildAnnoucement(channel)) => {
+            Some(Channel::GuildAnnouncement(channel)) => {
                 channel.messages.remove(message_id);
             },
             Some(Channel::GuildForum(channel)) => {

@@ -30,8 +30,8 @@ impl HttpRessource for Ready {
 
         Ok(Self {
             timestamp: chrono::Utc::now(),
-            //user: ClientUser::from_raw(raw["user"].take())?,
-            //application: Application::from_raw(raw["application"].take())?,
+            //user: ClientUser::from_raw(views["user"].take())?,
+            //application: Application::from_raw(views["application"].take())?,
             shard: shard.unwrap(),
         })
     }

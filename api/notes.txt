@@ -1,0 +1,5 @@
+https://docs.rs/oauth2/latest/oauth2/
+
+https://github.com/tokio-rs/axum/blob/main/examples/oauth/src/main.rs
+
+CDN: https://github.com/Sedorikku1949/kady_cdn/

@@ -5,6 +5,7 @@ use crate::manager::cache::UpdateCache;
 use crate::manager::http::HttpRessource;
 use crate::models::channel::ChannelKind;
 use crate::models::components::Emoji;
+use crate::models::interaction::InteractionDataOptionValue;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub enum ComponentType {
@@ -499,17 +500,22 @@ impl HttpRessource for SelectOption {
 ///
 /// Reference:
 /// - [Text Input Structure](https://discord.com/developers/docs/interactions/message-components#text-input-object-text-input-structure)
-#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct TextInput {
     pub kind: ComponentType,
-    pub style: TextInputStyle,
-    pub label: String,
+    pub style: Option<TextInputStyle>,
+    pub label: Option<String>,
     pub custom_id: String,
     pub placeholder: Option<String>,
     pub min_length: Option<u64>,
     pub max_length: Option<u64>,
     pub disabled: Option<bool>,
+
+    /// Only in modals :)
+    pub value: Option<InteractionDataOptionValue>
 }
+
+impl Eq for TextInput {}
 
 impl UpdateCache for TextInput {
     fn update(&mut self, from: &Self) {
@@ -543,13 +549,30 @@ impl UpdateCache for TextInput {
 impl HttpRessource for TextInput {
     fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
         let kind = ComponentType::TextInput;
-        let style = TextInputStyle::from_raw(raw["style"].clone(), shard)?;
-        let label = raw["label"].as_str().ok_or(Error::Model(ModelError::InvalidPayload("Failed to parse text input label".into())))?.to_string();
+        let style = if let Some(s) = raw.get("style") {
+            Some(TextInputStyle::from_raw(s.clone(), shard)?)
+        } else {
+            None
+        };
+        let label = if let Some(label) = raw.get("label") {
+            Some(
+                label.as_str()
+                    .ok_or(Error::Model(ModelError::InvalidPayload("Failed to parse text input label".into())))?
+                    .to_string()
+            )
+        } else {
+            None
+        };
         let custom_id = raw["custom_id"].as_str().ok_or(Error::Model(ModelError::InvalidPayload("Failed to parse text input custom id".into())))?.to_string();
         let placeholder = raw["placeholder"].as_str().map(|s| s.to_string());
         let min_length = raw["min_length"].as_u64();
         let max_length = raw["max_length"].as_u64();
         let disabled = raw["disabled"].as_bool();
+        let value = if let Some(v) = raw.get("value") {
+            Some(InteractionDataOptionValue::from_raw(v.clone(), shard)?)
+        } else {
+            None
+        };
 
         Ok(Self {
             kind,
@@ -560,6 +583,7 @@ impl HttpRessource for TextInput {
             min_length,
             max_length,
             disabled,
+            value
         })
     }
 }
@@ -568,7 +592,7 @@ impl TextInput {
     pub(crate) fn to_json(&self) -> Value {
         json!({
             "type": self.kind.to_json(),
-            "style": self.style.to_json(),
+            "style": self.style.as_ref().map(|s| s.to_json()),
             "label": self.label,
             "custom_id": self.custom_id,
             "placeholder": self.placeholder,

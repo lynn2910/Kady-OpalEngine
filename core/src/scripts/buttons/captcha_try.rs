@@ -156,7 +156,7 @@ pub(in crate::scripts) async fn triggered(ctx: &Context, payload: &InteractionCr
 
                         match channel {
                             Channel::GuildText(chl) => { let _ = chl.id.send_message(&ctx.skynet, msg).await; },
-                            Channel::GuildAnnoucement(chl) => { let _ = chl.id.send_message(&ctx.skynet, msg).await; },
+                            Channel::GuildAnnouncement(chl) => { let _ = chl.id.send_message(&ctx.skynet, msg).await; },
                             _ => {}
                         }
                     }

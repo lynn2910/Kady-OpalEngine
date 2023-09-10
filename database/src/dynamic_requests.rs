@@ -6,6 +6,7 @@ use error::{DatabaseError, Error, FileError, Result};
 pub struct DynamicRequest {
     pub users: UserRequests,
     pub guilds: GuildRequests,
+    pub system: SystemRequests
 }
 
 
@@ -22,7 +23,7 @@ pub struct UserRequests {
     pub update_last_seen: String,
     pub update_last_edited_timestamp: String,
     pub marriage: UserMarriage,
-    pub reputation: UserReputation,
+    pub cookies: UserCookies,
 }
 
 /// Contain all requests for the marriage table
@@ -33,8 +34,9 @@ pub struct UserMarriage {
 
 /// Contain all requests for the reputation table
 #[derive(Serialize, Deserialize, Debug)]
-pub struct UserReputation {
+pub struct UserCookies {
     pub get: String,
+    pub get_cookies_number: String,
     pub get_guild: String,
     pub get_last: String,
     pub get_last_guild: String,
@@ -42,6 +44,15 @@ pub struct UserReputation {
     pub get_top_10_guild: String,
     pub get_user_rank_global: String,
     pub get_user_rank_guild: String,
+
+    pub get_updatable_nuggets: String,
+    pub give_cookie: String,
+    pub give_cookie_in_guild: String,
+    pub give_cookie_from_system: String,
+    pub decrease_nuggets: String,
+    pub increase_nuggets: String,
+
+    pub remove_cookie: String
 }
 
 
@@ -96,6 +107,29 @@ pub struct GuildXp {
 pub struct GuildAutoRole {
     pub get_all: String,
     pub get_single: String
+}
+
+
+
+/// Contain all requests required by the core
+#[derive(Serialize, Deserialize, Debug)]
+pub struct SystemRequests {
+    pub quiz: SystemQuiz
+}
+
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct SystemQuiz {
+    pub get_question: String,
+    pub get_question_all: String,
+    pub get_question_random: String,
+    pub get_question_random_without_last: String,
+    pub get_user: String,
+    pub insert_user: String,
+    pub update_user_question: String,
+    pub question_completed: String,
+    pub get_all_possible_answers: String,
+    pub clear_users: String,
 }
 
 

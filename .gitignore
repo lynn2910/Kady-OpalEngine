@@ -7,3 +7,10 @@ pid
 blep.js
 lines_count.js
 _debug
+api/views/private/node_modules
+api/views/private/.idea
+api/views/private/.yarn/*
+api/views/public/node_modules
+api/views/public/.idea
+api/views/public/.yarn/*
+/api/views/public/.yarn/cache

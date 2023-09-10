@@ -460,8 +460,6 @@ pub(crate) mod admin_reload_slashs {
     }
 }
 
-
-
 pub(crate) mod admin_memory_report {
     use client::manager::events::Context;
     use client::models::events::InteractionCreate;

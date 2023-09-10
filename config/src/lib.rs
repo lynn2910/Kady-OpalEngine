@@ -49,7 +49,8 @@ impl Type for Config {
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct ApiConfig {
     pub retry_limit: u64,
-    pub close_timeout: u64
+    pub close_timeout: u64,
+    pub declared_files: Vec<(String, String, String)>
 }
 
 /// Contain security settings

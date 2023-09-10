@@ -64,7 +64,7 @@ pub enum Channel {
     Dm(Dm),
     GuildVoice(GuildVoice),
     GuildCategory(GuildCategory),
-    GuildAnnoucement(GuildAnnouncement),
+    GuildAnnouncement(GuildAnnouncement),
     GuildStageVoice(GuildStageVoice),
     GuildForum(GuildForum),
     Thread(Thread),
@@ -98,8 +98,8 @@ impl UpdateCache for Channel {
                     c.update(from);
                 }
             },
-            Self::GuildAnnoucement(c) => {
-                if let Self::GuildAnnoucement(from) = from {
+            Self::GuildAnnouncement(c) => {
+                if let Self::GuildAnnouncement(from) = from {
                     c.update(from);
                 }
             },
@@ -131,7 +131,7 @@ impl HttpRessource for Channel {
             ChannelKind::Dm => Ok(Self::Dm(Dm::from_raw(raw, shard)?)),
             ChannelKind::GuildVoice => Ok(Self::GuildVoice(GuildVoice::from_raw(raw, shard)?)),
             ChannelKind::GuildCategory => Ok(Self::GuildCategory(GuildCategory::from_raw(raw, shard)?)),
-            ChannelKind::GuildAnnouncement => Ok(Self::GuildAnnoucement(GuildAnnouncement::from_raw(raw, shard)?)),
+            ChannelKind::GuildAnnouncement => Ok(Self::GuildAnnouncement(GuildAnnouncement::from_raw(raw, shard)?)),
             ChannelKind::GuildStageVoice => Ok(Self::GuildStageVoice(GuildStageVoice::from_raw(raw, shard)?)),
             ChannelKind::GuildForum => Ok(Self::GuildForum(GuildForum::from_raw(raw, shard)?)),
             ChannelKind::PublicThread => Ok(Self::Thread(Thread::PublicThread(PublicThread::from_raw(raw, shard)?))),

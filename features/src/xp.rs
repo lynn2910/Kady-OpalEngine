@@ -223,7 +223,7 @@ pub async fn trigger(
 }
 
 lazy_static! {
-	static ref MSG_FORMAT_REGEX: Regex = Regex::new(r#"\{([^{}]+)\}"#).expect("Bro wtf, i can't parse this fucking regex !");
+	static ref MSG_FORMAT_REGEX: Regex = Regex::new(r"\{([^{}]+)\}").expect("Bro wtf, i can't parse this fucking regex !");
 }
 
 fn format_lvl_up_msg(

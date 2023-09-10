@@ -14,7 +14,7 @@ use error::{ Result, ApiError, Error };
 use crate::models::user::{Application, ClientUser, User, UserId};
 #[allow(unused_imports)] // Used in a macro
 use crate::constants::API_URL;
-use crate::models::channel::{Channel, ChannelId};
+use crate::models::channel::{Channel, ChannelId, Dm};
 use crate::models::guild::{Guild, GuildId, GuildMember, Role};
 use crate::models::interaction::{ApplicationCommand, InteractionCallbackType};
 use crate::models::message::{AttachmentBuilder, Message, MessageBuilder};
@@ -24,9 +24,9 @@ use crate::models::Snowflake;
 
 
 
-/// This trait is used to convert a raw json value into a struct.
+/// This trait is used to convert a views json value into a struct.
 pub trait HttpRessource: Sized + Send + Sync {
-    /// Convert the raw json value into a struct.
+    /// Convert the views json value into a struct.
     fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self>;
 }
 
@@ -760,6 +760,35 @@ impl Http {
         }
     }
 
+    /// Create a DM channel with a user.
+    ///
+    /// Reference:
+    /// - [Create DM](https://discord.com/developers/docs/resources/user#create-dm)
+    pub async fn create_dm_channel(&self, recipient: &UserId) -> Result<ApiResult<Dm>> {
+        let (tx, rx) = futures_channel::mpsc::unbounded();
+
+        let request = Request {
+            method: reqwest::Method::POST,
+            url: format!("{API_URL}/users/@me/channels"),
+            body: Some(json!({
+                "recipient_id": recipient.0
+            }).to_string()),
+            sender: Arc::new(Mutex::new(tx)),
+            headers: None,
+            multipart: None
+        };
+
+        let res = self.send_raw(
+            request.clone(),
+            rx
+        ).await;
+
+        match res {
+            Ok(value) => convert_value(value, None),
+            Err(e) => Err(e)
+        }
+    }
+
     /// Send a message to a channel.
     ///
     /// Reference:
@@ -780,6 +809,35 @@ impl Http {
             request.clone(),
             rx
         ).await;
+
+        match res {
+            Ok(value) => convert_value(value, None),
+            Err(e) => Err(e)
+        }
+    }
+
+    /// Send a message to a User channel.
+    ///
+    /// Reference:
+    /// - [Create Message](https://discord.com/developers/docs/resources/channel#create-message)
+    pub async fn send_user(&self, user: &UserId, payload: MessageBuilder) -> Result<ApiResult<Message>> {
+        let (tx, rx) = futures_channel::mpsc::unbounded();
+
+        let request = Request {
+            method: reqwest::Method::POST,
+            url: format!("{API_URL}/channels/{}/messages", user),
+            body: Some(payload.to_json().to_string()),
+            sender: Arc::new(Mutex::new(tx)),
+            headers: None,
+            multipart: None
+        };
+
+        let res = self.send_raw(
+            request.clone(),
+            rx
+        ).await;
+
+        dbg!(&res);
 
         match res {
             Ok(value) => convert_value(value, None),

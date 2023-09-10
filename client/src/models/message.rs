@@ -317,7 +317,7 @@ impl HttpRessource for Message {
             None
         };
         // TODO
-        let thread = None; // raw["thread"].as_object().map(|o| Thread::from_raw(o.clone()).unwrap());
+        let thread = None; // views["thread"].as_object().map(|o| Thread::from_raw(o.clone()).unwrap());
 
         let position = raw["position"].as_u64();
         let role_subscription_data = if let Some(role_subscription_data) = raw.get("role_subscription_data") {
@@ -782,7 +782,11 @@ pub struct MessageBuilder {
     pub attachments: Vec<MessageAttachmentBuilder>,
     pub reference: Option<MessageReference>,
     pub ephemeral: bool,
-    pub flags: MessageFlags
+    pub flags: MessageFlags,
+    /// Only for Modal Interactions
+    pub title: Option<String>,
+    /// Only for Modal Interactions
+    pub custom_id: Option<String>
 }
 
 impl Default for MessageBuilder {
@@ -795,7 +799,9 @@ impl Default for MessageBuilder {
             attachments: Vec::new(),
             reference: None,
             ephemeral: false,
-            flags: MessageFlags::new()
+            flags: MessageFlags::new(),
+            title: None,
+            custom_id: None
         }
     }
 }
@@ -807,6 +813,16 @@ impl MessageBuilder {
 
     pub fn set_content(mut self, content: impl ToString) -> Self {
         self.content = Some(content.to_string());
+        self
+    }
+
+    pub fn set_title(mut self, content: impl ToString) -> Self {
+        self.title = Some(content.to_string());
+        self
+    }
+
+    pub fn set_custom_id(mut self, content: impl ToString) -> Self {
+        self.custom_id = Some(content.to_string());
         self
     }
 
@@ -904,6 +920,14 @@ impl MessageBuilder {
 
         if let Some(reference) = &self.reference {
             json["message_reference"] = json!(reference);
+        }
+
+        if let Some(title) = &self.title {
+            json["title"] = json!(title);
+        }
+
+        if let Some(custom_id) = &self.custom_id {
+            json["custom_id"] = json!(custom_id);
         }
 
         if !self.flags.is_empty() {

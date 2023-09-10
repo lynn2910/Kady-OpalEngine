@@ -3,7 +3,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use error::{Result, Error, EventError};
 use crate::manager::cache::UpdateCache;
-use crate::manager::http::HttpRessource;
+use crate::manager::http::{ApiResult, Http, HttpRessource};
+use crate::models::message::{Message, MessageBuilder};
 use crate::models::Snowflake;
 
 /// Represent the id of a user
@@ -47,6 +48,16 @@ impl From<&str> for UserId {
 impl HttpRessource for UserId {
     fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
         Ok(Self(Snowflake::from_raw(raw, shard)?))
+    }
+}
+
+impl UserId {
+    pub async fn send(
+        &self,
+        http: &Http,
+        payload: MessageBuilder
+    ) -> Result<ApiResult<Message>> {
+        http.send_user(self, payload).await
     }
 }
 

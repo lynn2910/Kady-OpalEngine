@@ -23,6 +23,8 @@ regex = { workspace = true }
 chrono = { workspace = true }
 hex-literal = "0.4.1"
 clap = { version = "4.3.19", features = ["default", "derive"]}
+strsim = "0.10.0"
+openssl = { version = "0.10.55", features = ["vendored"] }
 
 [dependencies.sqlx]
 workspace = true

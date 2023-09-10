@@ -196,7 +196,7 @@ async fn format_status(
     config: Arc<RwLock<Config>>
 ) -> Activity
 {
-    let regex = Regex::new(r#"(\{\w+\})"#).unwrap();
+    let regex = Regex::new(r"(\{\w+})").unwrap();
 
     // use the regex to catch everything between {}
     let captures = regex.captures_iter(&status.name);

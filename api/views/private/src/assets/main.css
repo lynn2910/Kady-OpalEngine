@@ -1,0 +1,178 @@
+@import url(https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap);
+*,
+html {
+  margin: 0;
+  padding: 0;
+}
+body {
+  font-family: 'Montserrat', sans-serif;
+  color: #fff;
+  background-color: #0F1120;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100vw;
+  overflow-x: hidden;
+}
+button {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex-shrink: 0;
+  text-align: center;
+  cursor: pointer;
+  border: None;
+  border-radius: 15px;
+  background: #486BC6;
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  font-style: normal;
+  line-height: 100%;
+  /* 1.5rem */
+  padding: 15px 25px;
+  transition: background-color 0.1s ease-in-out;
+}
+button:hover {
+  background: #2f5eda;
+  transition: background-color 0.1s ease-in-out;
+}
+a {
+  outline: none;
+  text-decoration: none;
+  color: #486BC6;
+}
+a:hover {
+  color: #cceaff;
+}
+.navigation {
+  position: absolute;
+  height: 100vh;
+  width: 300px;
+  background-color: #080E18;
+  border-right: 1px dashed #486BC6;
+}
+.navigation .head {
+  width: calc(100% - 30px);
+  height: 70px;
+  margin: 15px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.navigation .head img {
+  height: 65px;
+  width: auto;
+}
+.navigation .head h2 {
+  margin: auto;
+}
+.navigation .nav {
+  margin-top: 50px;
+  width: 100%;
+}
+.navigation .nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.navigation .nav ul li {
+  margin: 35px auto 10px 20px;
+  padding: 0;
+  height: 30px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.navigation .nav ul li a {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  font-size: 20px;
+  font-weight: 700;
+}
+.navigation .nav ul li img,
+.navigation .nav ul li svg {
+  height: 30px;
+  width: auto;
+  margin-right: 15px;
+}
+.connection {
+  user-select: none;
+}
+.connection.connected {
+  display: none;
+}
+.connection .background,
+.connection .conn {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+}
+.connection .background {
+  backdrop-filter: blur(10px);
+}
+.connection .conn {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.connection .conn .box {
+  margin: auto;
+  width: 400px;
+  height: 450px;
+  padding: 50px 20px;
+  background-color: #080E18;
+  border-radius: 25px;
+  border: 2px solid #081F44;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.connection .conn .box .informations {
+  height: 80%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.connection .conn .box .informations .info {
+  margin: 20px auto;
+  width: 200px;
+}
+.connection .conn .box .informations .info h2 {
+  margin-bottom: 25px;
+}
+.connection .conn .box .informations .info input {
+  padding: 15px 20px;
+  border-radius: 5px;
+  background-color: #0F1120;
+  border: 1px solid #0F1120;
+  outline: none;
+  color: #fff;
+}
+.connection .conn .box .informations .info input:invalid,
+.connection .conn .box .informations .info input.no {
+  border: 1px solid #d24343;
+}
+.connection .conn .box p.error_notifier {
+  margin: 35px auto 0 auto;
+  font-weight: 500;
+  color: #d24343;
+  visibility: hidden;
+  user-select: none;
+}
+.connection .conn .box p.error_notifier.visible {
+  visibility: visible;
+}
+.connection .conn .box button.connecting {
+  background-color: #4D5A79;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+/*# sourceMappingURL=main.css.map */
