@@ -5,7 +5,9 @@ mod crates;
 mod interaction_constructor;
 mod scripts;
 mod assets;
+mod database_cleaner;
 
+use std::ops::Deref;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -17,13 +19,14 @@ use client::Client;
 use client::manager::events::{Context, EventHandler};
 use client::manager::http::HttpConfiguration;
 use client::models::components::message_components::ComponentType;
-use client::models::events::{GuildMemberUpdate, InteractionCreate, MessageCreate, Ready};
+use client::models::events::{GuildCreate, GuildDelete, GuildMemberUpdate, InteractionCreate, MessageCreate, Ready};
 use client::models::interaction::InteractionType;
 use client::models::message::MessageBuilder;
 use config::Config;
-use database::{Database, model};
+use database::Database;
 use translation::message;
 use clap::Parser;
+use crate::scripts::get_guild;
 
 extern crate translation;
 
@@ -42,12 +45,12 @@ impl EventHandler for Handler {
         info!("Connected as {}", application.name);
     }
 
-    async fn guild_create(&self, ctx: Context, payload: client::models::events::GuildCreate) {
+    async fn guild_create(&self, ctx: Context, payload: GuildCreate) {
         // add guild to cache and lazy load channels
-        if let Some(guild) = payload.guild {
+        if let Some(guild) = payload.guild.as_ref() {
             let mut cache = ctx.cache.write().await;
 
-            cache.update_guild(&guild);
+            cache.update_guild(guild);
 
             let channels = match ctx.skynet.fetch_guild_channels(&guild.id).await {
                 Ok(chl) => chl,
@@ -67,17 +70,57 @@ impl EventHandler for Handler {
                 }
             }
         }
+
+        events::guild_add_remove::guild_create(&ctx, payload).await;
+    }
+
+    async fn guild_delete(&self, ctx: Context, payload: GuildDelete) {
+        if payload.unavailable { return; } // The guild is unavailable, but the client is in the guild
+
+        // remove the guild from the cache
+        let guild = {
+            let mut cache = ctx.cache.write().await;
+            cache.delete_guild(payload.id.clone())
+        };
+
+        events::guild_add_remove::guild_remove(&ctx, payload, guild).await;
     }
 
     async fn message_create(&self, ctx: Context, payload: MessageCreate) {
         // ensure the guild exists in the database
-        if let Some(guild_id) = payload.guild_id.clone() {
+        if let Some(guild_id) = payload.guild_id.clone()         {
             if let Some(db) = ctx.data.read().await.get::<Database>() {
                 let pool = db.get_pool().await;
+                let requests = db.get_requests().await;
 
-                if let Err(e) = model::guild::Guild::ensure(&pool, db.get_requests().await.guilds.ensure.as_str(), &guild_id).await {
-                    warn!(target: "EventHandler", "Cannot ensure the existence of guild {:?} in the database: {:?}", payload.guild_id, e);
-                };
+                let id = guild_id.to_string();
+
+                let has_res = sqlx::query(requests.guilds.has.as_str())
+                    .bind(&id)
+                    .fetch_one(pool.deref())
+                    .await;
+
+                // if 'has_res' is an Err(_), well, the data don't exist :)
+                if has_res.is_err() {
+                    let _ = sqlx::query(requests.guilds.ensure.as_str())
+                        .bind(&id)
+                        .execute(pool.deref())
+                        .await;
+
+                    let guild = get_guild(&ctx, &guild_id).await;
+
+                    if let Some(g) = guild {
+                        if let Some(config) = ctx.get_data().await {
+                            events::guild_add_remove::send_new_guild_message(
+                                &ctx,
+                                &g,
+                                &config
+                            ).await;
+                        } else {
+                            warn!(target: "Runtime", "The config object was not found in the context data");
+                        }
+                    }
+                }
             }
         }
 
@@ -92,13 +135,39 @@ impl EventHandler for Handler {
 
     async fn message_delete(&self, ctx: Context, payload: client::models::events::MessageDelete) {
         // ensure the guild exists in the database
-        if let Some(guild_id) = payload.guild_id.clone() {
+        if let Some(guild_id) = payload.guild_id.clone()         {
             if let Some(db) = ctx.data.read().await.get::<Database>() {
                 let pool = db.get_pool().await;
+                let requests = db.get_requests().await;
 
-                if let Err(e) = model::guild::Guild::ensure(&pool, db.get_requests().await.guilds.ensure.as_str(), &guild_id).await {
-                    warn!(target: "EventHandler", "Cannot ensure the existence of guild {:?} in the database: {:?}", payload.guild_id, e);
-                };
+                let id = guild_id.to_string();
+
+                let has_res = sqlx::query(requests.guilds.has.as_str())
+                    .bind(&id)
+                    .fetch_one(pool.deref())
+                    .await;
+
+                // if 'has_res' is an Err(_), well, the data don't exist :)
+                if has_res.is_err() {
+                    let _ = sqlx::query(requests.guilds.ensure.as_str())
+                        .bind(&id)
+                        .execute(pool.deref())
+                        .await;
+
+                    let guild = get_guild(&ctx, &guild_id).await;
+
+                    if let Some(g) = guild {
+                        if let Some(config) = ctx.get_data().await {
+                            events::guild_add_remove::send_new_guild_message(
+                                &ctx,
+                                &g,
+                                &config
+                            ).await;
+                        } else {
+                            warn!(target: "Runtime", "The config object was not found in the context data");
+                        }
+                    }
+                }
             }
         }
 
@@ -118,10 +187,36 @@ impl EventHandler for Handler {
         {
             if let Some(db) = ctx.data.read().await.get::<Database>() {
                 let pool = db.get_pool().await;
+                let requests = db.get_requests().await;
 
-                if let Err(e) = model::guild::Guild::ensure(&pool, db.get_requests().await.guilds.ensure.as_str(), &payload.guild_id).await {
-                    warn!(target: "EventHandler", "Cannot ensure the existence of guild {:?} in the database: {:?}", payload.guild_id, e);
-                };
+                let id = payload.guild_id.to_string();
+
+                let has_res = sqlx::query(requests.guilds.has.as_str())
+                    .bind(&id)
+                    .fetch_one(pool.deref())
+                    .await;
+
+                // if 'has_res' is an Err(_), well, the data don't exist :)
+                if has_res.is_err() {
+                    let _ = sqlx::query(requests.guilds.ensure.as_str())
+                        .bind(&id)
+                        .execute(pool.deref())
+                        .await;
+
+                    let guild = get_guild(&ctx, &payload.guild_id).await;
+
+                    if let Some(g) = guild {
+                        if let Some(config) = ctx.get_data().await {
+                            events::guild_add_remove::send_new_guild_message(
+                                &ctx,
+                                &g,
+                                &config
+                            ).await;
+                        } else {
+                            warn!(target: "Runtime", "The config object was not found in the context data");
+                        }
+                    }
+                }
             }
         }
 
@@ -186,10 +281,36 @@ impl EventHandler for Handler {
         if let Some(guild_id) = &payload.interaction.guild_id {
             if let Some(db) = ctx.data.read().await.get::<Database>() {
                 let pool = db.get_pool().await;
+                let requests = db.get_requests().await;
 
-                if let Err(e) = model::guild::Guild::ensure(&pool, db.get_requests().await.guilds.ensure.as_str(), &guild_id).await {
-                    warn!(target: "EventHandler", "Cannot ensure the existence of guild {:?} in the database: {:?}", guild_id, e);
-                };
+                let id = guild_id.to_string();
+
+                let has_res = sqlx::query(requests.guilds.has.as_str())
+                    .bind(&id)
+                    .fetch_one(pool.deref())
+                    .await;
+
+                // if 'has_res' is an Err(_), well, the data don't exist :)
+                if has_res.is_err() {
+                    let _ = sqlx::query(requests.guilds.ensure.as_str())
+                        .bind(&id)
+                        .execute(pool.deref())
+                        .await;
+
+                    let guild = get_guild(&ctx, guild_id).await;
+
+                    if let Some(g) = guild {
+                        if let Some(config) = ctx.get_data().await {
+                            events::guild_add_remove::send_new_guild_message(
+                                &ctx,
+                                &g,
+                                &config
+                            ).await;
+                        } else {
+                            warn!(target: "Runtime", "The config object was not found in the context data");
+                        }
+                    }
+                }
             }
         }
 
@@ -287,7 +408,10 @@ async fn start(cli_args: CliArgs) {
 
     // load database
     let database: Database = match Database::connect(&archive, &config).await {
-        Ok(d) => d,
+        Ok(d) => {
+            database_cleaner::database_cleaner(d.clone());
+            d
+        },
         Err(err) => panic!("{:?}", err)
     };
 

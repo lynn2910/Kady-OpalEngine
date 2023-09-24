@@ -117,7 +117,7 @@ async fn ghostping(ctx: &Context, message: &Message, guild_data: &model::guild::
         };
 
         // send the embed
-        if let Err(e) = ctx.skynet.send_message(&message.channel_id, MessageBuilder::new().add_embed(embed)).await {
+        if let Err(e) = ctx.skynet.send_message(&message.channel_id, MessageBuilder::new().add_embed(embed), None).await {
             error!("Failed to send ghostping embed: {:?}", e);
         };
     }

@@ -81,6 +81,34 @@ impl CacheManager {
         }
     }
 
+    /// Remove a guild from the cache
+    pub fn delete_guild(&mut self, id: impl Into<GuildId>) -> Option<Guild> {
+        let id = id.into();
+        let guild = match self.guilds.remove(&id) {
+            Some(g) => g,
+            None => return None
+        };
+
+        // Delete all channels :)
+        self.channels.retain(|_, c| {
+            match &c {
+                Channel::GuildText(c) => c.guild_id == id,
+                Channel::GuildForum(c) => c.guild_id == id,
+                Channel::GuildAnnouncement(c) => c.guild_id == id,
+                Channel::GuildCategory(c) => c.guild_id == id,
+                Channel::GuildVoice(c) => c.guild_id == id,
+                Channel::Thread(c) => match c {
+                    Thread::AnnouncementThread(t) => t.guild_id == id,
+                    Thread::PrivateThread(t) => t.guild_id == id,
+                    Thread::PublicThread(t) => t.guild_id == id,
+                }
+                _ => false
+            }
+        });
+
+        Some(guild)
+    }
+
     /// Returns a reference to a guild if it exists.
     pub fn get_guild(&self, guild_id: &GuildId) -> Option<&Guild> {
         self.guilds.get(guild_id)
@@ -114,6 +142,11 @@ impl CacheManager {
     /// Returns a reference to a channel if it exists.
     pub fn get_channel(&self, channel_id: &ChannelId) -> Option<&Channel> {
         self.channels.get(channel_id)
+    }
+
+    /// Delete a channel from the cache if it exist
+    pub fn delete_channel(&mut self, channel_id: impl Into<ChannelId>) -> Option<Channel> {
+        self.channels.remove(&channel_id.into())
     }
 
     /// Add or update a message in the cache.

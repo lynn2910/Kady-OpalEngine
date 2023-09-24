@@ -14,7 +14,7 @@ use crate::manager::cache::CacheManager;
 use crate::manager::events::{Context, EventHandler};
 use crate::manager::http::{HttpConfiguration, HttpManager, HttpRessource};
 use crate::manager::shard::{GatewayEvent, Shard, ShardChannels, ShardManager};
-use crate::models::events::{GuildCreate, GuildMemberAdd, GuildMemberUpdate, InteractionCreate, MessageCreate, MessageDelete, Ready};
+use crate::models::events::{GuildCreate, GuildDelete, GuildMemberAdd, GuildMemberUpdate, InteractionCreate, MessageCreate, MessageDelete, Ready};
 use crate::typemap::{Type, TypeMap};
 
 pub mod manager;
@@ -394,6 +394,31 @@ impl Client {
                     let events_clone = events.clone();
                     tokio::spawn(async move {
                         let _ = events_clone.guild_create(ctx, guild_create).await;
+                    });
+                }
+            },
+            "GUILD_DELETE" => {
+                let guild_delete: GuildDelete = match GuildDelete::from_raw(content["d"].clone(), Some(shard)) {
+                    Ok(d) => d,
+                    Err(err) => {
+                        #[cfg(feature = "debug")]
+                        warn!("Failed to parse guild delete event: {:?}", err);
+                        return;
+                    }
+                };
+
+                if let Some(events) = self.events.as_ref() {
+                    let ctx = Context::new(
+                        self.data.clone(),
+                        guild_delete.shard,
+                        self.http_manager.client.clone(),
+                        self.shard_manager.clone(),
+                        self.cache.clone()
+                    );
+
+                    let events_clone = events.clone();
+                    tokio::spawn(async move {
+                        let _ = events_clone.guild_delete(ctx, guild_delete).await;
                     });
                 }
             },

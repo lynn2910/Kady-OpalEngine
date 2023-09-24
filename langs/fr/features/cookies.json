@@ -12,7 +12,7 @@
     "cookies_given": "> 🍪 ** ** **Vous avez donné** {cookies} **cookies à** <@{user}>.\nMerci d'être si généreux 😁",
     "quiz": {
       "give_question": "> ❓ ** ** **Votre question du jour est:**\n{question}",
-      "already_given": "> 🤔 ** ** **Je crois que vous avez déjà répondu à la question du jour.**\nRevenez demain ! Je prépare une question rien que pour vous :D",
+      "already_given": "> 🤔 ** ** **Je crois que vous avez déjà répondu à la question du jour.**\nRevenez dans <t:{retry_in}:R> ! Je prépare une question rien que pour vous :D",
       "answer_button": "Répondre",
       "questions": {
         "4d48092d-431f-4637-95d8-e92baec87add": "Quelle reine légendaire était associée à l'Angleterre durant le Moyen Âge et est connue pour sa rivalité avec Marie Stuart ?",

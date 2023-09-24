@@ -45,7 +45,7 @@ impl HttpRessource for Ready {
 /// - When the client joins a new guild.
 ///
 /// Reference:
-/// https://discord.com/developers/docs/topics/gateway#guild-create
+/// https://discord.com/developers/docs/topics/gateway-events#guild-create
 #[derive(Debug)]
 pub struct GuildCreate {
     /// When this guild was joined at
@@ -84,6 +84,39 @@ impl HttpRessource for GuildCreate {
             id,
             unavailable,
             guild
+        })
+    }
+}
+
+/// Represents an event that is sent when a guild is deleted
+///
+/// Can be called:
+/// - When the client is removed from a guild
+/// - When a guild becomes unavailable due to an outage, or when the client leaves or is removed from a guild
+#[derive(Debug)]
+pub struct GuildDelete {
+    /// If this guild is unavailable
+    ///
+    /// The client is no longer in this guild when this field is false
+    pub unavailable: bool,
+    pub id: GuildId,
+    /// The shard id
+    pub shard: u64,
+}
+
+impl HttpRessource for GuildDelete {
+    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
+        if shard.is_none() {
+            return Err(Error::Event(EventError::Runtime("Shard id is required to create a GuildDelete event".to_string())));
+        }
+
+        let unavailable = raw["unavailable"].as_bool().unwrap_or(false);
+        let id = GuildId::from_raw(raw["id"].clone(), shard)?;
+
+        Ok(Self {
+            unavailable,
+            id,
+            shard: shard.unwrap()
         })
     }
 }

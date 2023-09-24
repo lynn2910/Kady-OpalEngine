@@ -60,7 +60,7 @@ pub(crate) async fn slash_command_received(ctx: &Context, payload: &InteractionC
     let name = command.name.clone().unwrap_or(String::new());
     // DON'T USE "" AS A COMMAND NAME!!
     match name.as_str() {
-        "ping" => slashs::ping::triggered(ctx, payload).await,
+        "ping" => slashs::common::ping::triggered(ctx, payload).await,
         "citation" => slashs::citation::triggered(ctx, payload).await,
         "admin_reload_commands" | "admin_update_commands" => slashs::admin::admin_reload_slashs::triggered(ctx, payload).await,
         "admin_reload_requests" => slashs::admin::admin_reload_requests::triggered(ctx, payload).await,
@@ -69,6 +69,12 @@ pub(crate) async fn slash_command_received(ctx: &Context, payload: &InteractionC
         "guild_rank" => slashs::xp::guild_rank::triggered(ctx, payload).await,
         "top" => slashs::top::triggered(ctx, payload).await,
         "cookies" => slashs::cookies::triggered(ctx, payload).await,
+        "avatar" => slashs::common::avatar_slash::triggered(ctx, payload).await,
+        "banner" => slashs::common::banner_slash::triggered(ctx, payload).await,
+        "welcome" => slashs::common::welcome::triggered(ctx, payload).await,
+        "rateit" | "note" => slashs::fun::rateit::triggered(ctx, payload).await,
+        "unacceptable" => slashs::fun::unacceptable::triggered(ctx, payload).await,
+        "8ball" => slashs::fun::eight_ball::triggered(ctx, payload).await,
         _ => {
             let local = get_guild_locale(&payload.interaction.guild_locale);
             if let Err(e) = payload.interaction.reply(&ctx.skynet, unknown_command(local)).await {

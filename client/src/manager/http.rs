@@ -793,16 +793,22 @@ impl Http {
     ///
     /// Reference:
     /// - [Create Message](https://discord.com/developers/docs/resources/channel#create-message)
-    pub async fn send_message(&self, channel: &ChannelId, payload: MessageBuilder) -> Result<ApiResult<Message>> {
+    pub async fn send_message(
+        &self,
+        channel: &ChannelId,
+        payload: MessageBuilder,
+        files: Option<Vec<AttachmentBuilder>>
+    ) -> Result<ApiResult<Message>>
+    {
         let (tx, rx) = futures_channel::mpsc::unbounded();
 
         let request = Request {
             method: reqwest::Method::POST,
-            url: format!("{API_URL}/channels/{}/messages", channel.0),
+            url: format!("{API_URL}/channels/{}/messages", channel),
             body: Some(payload.to_json().to_string()),
             sender: Arc::new(Mutex::new(tx)),
             headers: None,
-            multipart: None
+            multipart: files
         };
 
         let res = self.send_raw(

@@ -45,6 +45,18 @@ impl From<&str> for UserId {
     }
 }
 
+impl From<User> for UserId {
+    fn from(user: User) -> Self {
+        user.id
+    }
+}
+
+impl From<&User> for UserId {
+    fn from(user: &User) -> Self {
+        user.id.clone()
+    }
+}
+
 impl HttpRessource for UserId {
     fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
         Ok(Self(Snowflake::from_raw(raw, shard)?))
@@ -177,9 +189,6 @@ impl HttpRessource for Application {
 
 impl Application {
     pub fn icon_url(&self, size: usize, extension: impl Display) -> Option<String> {
-
-        dbg!(&self.cover_image);
-
         self.cover_image.as_ref()?;
 
         Some(
@@ -231,6 +240,25 @@ impl User {
         Some(
             format!(
                 "https://cdn.discordapp.com/avatars/{id}/{hash}.{extension}?size={size}",
+                id = self.id,
+                hash = hash
+            )
+        )
+    }
+
+    pub fn banner_url(&self, size: usize, dynamic: bool, extension: impl Display) -> Option<String> {
+        self.banner.as_ref()?;
+
+        let hash = self.banner.clone().unwrap_or("png".to_string());
+
+        let mut extension = extension.to_string();
+        if dynamic && hash.starts_with("a_") {
+            extension = "gif".to_string()
+        }
+
+        Some(
+            format!(
+                "https://cdn.discordapp.com/banners/{id}/{hash}.{extension}?size={size}",
                 id = self.id,
                 hash = hash
             )

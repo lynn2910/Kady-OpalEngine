@@ -235,6 +235,177 @@ pub(crate) async fn instance_trigger(
         }
     }
 
+    // avatar
+    {
+        let avatar = avatar_slash();
+        let r = http.create_global_application_command(&application.id, avatar).await;
+        match r {
+            Err(e) => {
+                error!(target: "InteractionUpdater", "Failed to create slash command 'avatar': {:?}", e);
+                errors.push(
+                    RuntimeError::new(e.to_string())
+                        .with_target("create_global_application_command")
+                        .with_context("Failed to create slash command 'avatar'")
+                );
+            }
+            Ok(Err(e)) => {
+                error!(target: "InteractionUpdater", "Failed to create slash command 'avatar': {:?}", e);
+                errors.push(
+                    RuntimeError::new(e.to_string())
+                        .with_target("create_global_application_command")
+                        .with_context("Failed to create slash command 'avatar'")
+                );
+            }
+            Ok(Ok(_)) => {
+                info!(target: "InteractionUpdater", "Created slash command 'avatar'");
+                success.push("global_command::avatar".to_string());
+            }
+        }
+    }
+
+    // banner
+    {
+        let banner = banner_slash();
+        let r = http.create_global_application_command(&application.id, banner).await;
+        match r {
+            Err(e) => {
+                error!(target: "InteractionUpdater", "Failed to create slash command 'banner': {:?}", e);
+                errors.push(
+                    RuntimeError::new(e.to_string())
+                        .with_target("create_global_application_command")
+                        .with_context("Failed to create slash command 'banner'")
+                );
+            }
+            Ok(Err(e)) => {
+                error!(target: "InteractionUpdater", "Failed to create slash command 'banner': {:?}", e);
+                errors.push(
+                    RuntimeError::new(e.to_string())
+                        .with_target("create_global_application_command")
+                        .with_context("Failed to create slash command 'banner'")
+                );
+            }
+            Ok(Ok(_)) => {
+                info!(target: "InteractionUpdater", "Created slash command 'banner'");
+                success.push("global_command::banner".to_string());
+            }
+        }
+    }
+
+
+    // rateit
+    {
+        let rateit = rateit_slash();
+        let r = http.create_global_application_command(&application.id, rateit).await;
+        match r {
+            Err(e) => {
+                error!(target: "InteractionUpdater", "Failed to create slash command 'rateit': {:?}", e);
+                errors.push(
+                    RuntimeError::new(e.to_string())
+                        .with_target("create_global_application_command")
+                        .with_context("Failed to create slash command 'rateit'")
+                );
+            }
+            Ok(Err(e)) => {
+                error!(target: "InteractionUpdater", "Failed to create slash command 'rateit': {:?}", e);
+                errors.push(
+                    RuntimeError::new(e.to_string())
+                        .with_target("create_global_application_command")
+                        .with_context("Failed to create slash command 'rateit'")
+                );
+            }
+            Ok(Ok(_)) => {
+                info!(target: "InteractionUpdater", "Created slash command 'rateit'");
+                success.push("global_command::rateit".to_string());
+            }
+        }
+    }
+
+    // unacceptable
+    {
+        let unacceptable = unacceptable_slash();
+        let r = http.create_global_application_command(&application.id, unacceptable).await;
+        match r {
+            Err(e) => {
+                error!(target: "InteractionUpdater", "Failed to create slash command 'unacceptable': {:?}", e);
+                errors.push(
+                    RuntimeError::new(e.to_string())
+                        .with_target("create_global_application_command")
+                        .with_context("Failed to create slash command 'unacceptable'")
+                );
+            }
+            Ok(Err(e)) => {
+                error!(target: "InteractionUpdater", "Failed to create slash command 'unacceptable': {:?}", e);
+                errors.push(
+                    RuntimeError::new(e.to_string())
+                        .with_target("create_global_application_command")
+                        .with_context("Failed to create slash command 'unacceptable'")
+                );
+            }
+            Ok(Ok(_)) => {
+                info!(target: "InteractionUpdater", "Created slash command 'unacceptable'");
+                success.push("global_command::unacceptable".to_string());
+            }
+        }
+    }
+
+    // welcome
+    {
+        let welcome = welcome_slash();
+        let r = http.create_global_application_command(&application.id, welcome).await;
+        match r {
+            Err(e) => {
+                error!(target: "InteractionUpdater", "Failed to create slash command 'welcome': {:?}", e);
+                errors.push(
+                    RuntimeError::new(e.to_string())
+                        .with_target("create_global_application_command")
+                        .with_context("Failed to create slash command 'welcome'")
+                );
+            }
+            Ok(Err(e)) => {
+                error!(target: "InteractionUpdater", "Failed to create slash command 'welcome': {:?}", e);
+                errors.push(
+                    RuntimeError::new(e.to_string())
+                        .with_target("create_global_application_command")
+                        .with_context("Failed to create slash command 'welcome'")
+                );
+            }
+            Ok(Ok(_)) => {
+                info!(target: "InteractionUpdater", "Created slash command 'welcome'");
+                success.push("global_command::welcome".to_string());
+            }
+        }
+    }
+
+    // 8ball
+    {
+        let eight_ball = eight_ball_slash();
+        let r = http.create_global_application_command(&application.id, eight_ball).await;
+        match r {
+            Err(e) => {
+                error!(target: "InteractionUpdater", "Failed to create slash command '8ball': {:?}", e);
+                errors.push(
+                    RuntimeError::new(e.to_string())
+                        .with_target("create_global_application_command")
+                        .with_context("Failed to create slash command '8ball'")
+                );
+            }
+            Ok(Err(e)) => {
+                error!(target: "InteractionUpdater", "Failed to create slash command '8ball': {:?}", e);
+                errors.push(
+                    RuntimeError::new(e.to_string())
+                        .with_target("create_global_application_command")
+                        .with_context("Failed to create slash command '8ball'")
+                );
+            }
+            Ok(Ok(_)) => {
+                info!(target: "InteractionUpdater", "Created slash command '8ball'");
+                success.push("global_command::8ball".to_string());
+            }
+        }
+    }
+
+
+
     // admin_reload_commands [local]
     {
         let admin_reload_commands = admin_reload_commands_slash();
@@ -437,6 +608,34 @@ fn citation_slash() -> ApplicationCommand {
         )
 }
 
+fn avatar_slash() -> ApplicationCommand {
+    ApplicationCommand::new_global(
+        "avatar",
+        "👤 Get the beautiful avatar of yourself or your friends",
+        ApplicationCommandType::ChatInput
+    ).add_localization("fr", "avatar", "👤 Obtenez le magnifique avatar de vous-même ou de vos amis")
+        .set_dm_permission(true)
+        .add_option(
+            ApplicationCommandOption::new(ApplicationCommandOptionType::User, "user", "The user (optional)", false)
+                .add_name_localization("fr", "utilisateur")
+                .add_description_localization("fr", "L'utilisateur (optionnel)")
+        )
+}
+
+fn banner_slash() -> ApplicationCommand {
+    ApplicationCommand::new_global(
+        "banner",
+        "👤 Get the beautiful banner of yourself or your friends",
+        ApplicationCommandType::ChatInput
+    ).add_localization("fr", "avatar", "👤 Obtenez la magnifique bannière de vous-même ou de vos amis")
+        .set_dm_permission(true)
+        .add_option(
+            ApplicationCommandOption::new(ApplicationCommandOptionType::User, "user", "The user (optional)", false)
+                .add_name_localization("fr", "utilisateur")
+                .add_description_localization("fr", "L'utilisateur (optionnel)")
+        )
+}
+
 fn cookies_slash() -> ApplicationCommand {
     ApplicationCommand::new_global(
         "cookies",
@@ -484,4 +683,49 @@ fn cookies_slash() -> ApplicationCommand {
                     .add_description_localization("fr", "🍪 Le nombre de cookies que vous souhaiter donné(e)")
             )
     )
+}
+
+
+
+fn rateit_slash() -> ApplicationCommand {
+    ApplicationCommand::new_global(
+        "rateit",
+        "📒 Will you have the best note ?",
+        ApplicationCommandType::ChatInput
+    ).add_localization("fr", "note", "📒 Allez-vous avoir la meilleure note ?")
+}
+
+
+
+fn eight_ball_slash() -> ApplicationCommand {
+    ApplicationCommand::new_global(
+        "8ball",
+        "🎱 Will the chance be with you ?",
+        ApplicationCommandType::ChatInput
+    ).add_localization("fr", "8ball", "🎱 La chance sera-elle de ton coté ?")
+        .add_option(
+            ApplicationCommandOption::new(
+                ApplicationCommandOptionType::String,
+                "question",
+                "😁 Your question",
+                true
+            )
+                .add_description_localization("fr", "😁 Ta question")
+        )
+}
+
+fn unacceptable_slash() -> ApplicationCommand {
+    ApplicationCommand::new_global(
+        "unacceptable",
+        "💥 This is definitely unacceptable!",
+        ApplicationCommandType::ChatInput
+    ).add_localization("fr", "inacceptable", "💥 C'est définitivement inacceptable !")
+}
+
+fn welcome_slash() -> ApplicationCommand {
+    ApplicationCommand::new_global(
+        "welcome",
+        "👋 Welcome the new members",
+        ApplicationCommandType::ChatInput
+    ).add_localization("fr", "bienvenue", "👋 Souhaite la bienvenue")
 }

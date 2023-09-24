@@ -1177,7 +1177,7 @@ impl HttpRessource for OptionValue {
 ///
 /// Reference:
 /// - [Discord Docs](https://discord.com/developers/docs/interactions/application-commands#application-command-object-application-command-option-type)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum ApplicationCommandOptionType {
     SubCommand = 1,
     SubCommandGroup = 2,

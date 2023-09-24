@@ -122,8 +122,8 @@ pub(crate) mod nuggets {
                     }
                 }
 
-                // 86400000ms = 1d
-                sleep(Duration::from_millis(86400000)).await;
+                // 3600s = 1h
+                sleep(Duration::from_secs(3600)).await;
             }
         });
     }

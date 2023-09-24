@@ -3,7 +3,7 @@ use tokio::sync::RwLock;
 use crate::manager::cache::CacheManager;
 use crate::manager::http::Http;
 use crate::manager::shard::ShardManager;
-use crate::models::events::{GuildCreate, GuildMemberAdd, GuildMemberUpdate, InteractionCreate, MessageCreate, MessageDelete, Ready};
+use crate::models::events::{GuildCreate, GuildDelete, GuildMemberAdd, GuildMemberUpdate, InteractionCreate, MessageCreate, MessageDelete, Ready};
 use crate::typemap::{Type, TypeMap};
 
 #[async_trait::async_trait]
@@ -24,6 +24,16 @@ pub trait EventHandler: Send + Sync {
     /// Reference:
     /// - [Discord Docs - Gateway Events](https://discord.com/developers/docs/topics/gateway-events#guild-create)
     async fn guild_create(&self, _ctx: Context, _payload: GuildCreate) {}
+
+    /// Called when a guild is deleted or unavailable
+    ///
+    /// Will be triggered:
+    /// - When the client is removed from a guild
+    /// - When a guild become unavailable
+    ///
+    /// Reference:
+    /// - [Discord Docs - Gateway Events](https://discord.com/developers/docs/topics/gateway-events#guild-create)
+    async fn guild_delete(&self, _ctx: Context, _payload: GuildDelete) {}
 
     /// Called when a message is created
     ///

@@ -1,4 +1,5 @@
 use log::error;
+use regex::Regex;
 use client::manager::events::Context;
 use client::models::events::MessageCreate;
 use client::models::message::MessageBuilder;
@@ -66,5 +67,41 @@ pub(crate) async fn triggered(ctx: Context, payload: MessageCreate) {
                 error!(target: "Runtime", "cannot acquire the guild informations in the MessageCreate event: {e:#?}");
             }
         };
+    }
+
+    // blep
+    if let Some(c) = payload.message.content.as_ref().map(|c| c.trim().to_lowercase()) {
+        let c = {
+            let reg: Regex = Regex::new(r"\s+").unwrap();
+            reg.replace(c.as_str(), " ").to_string()
+        };
+
+        let reply = match c.as_str() {
+            "riki like fighting easy monsters" => Some("Dundun"),
+            "i'm really feeling it" | "i'm really feeling it!" => Some("Said shulk!"),
+            "hear that, noah? lanz wants something a bit meatier"
+                | "hear that, noah? lanz wants something a bit meatier!"=> Some("Eunie is as Eunie does"),
+            "sometimes, you just gotta get wild" => Some("*pulls out the monado*"),
+            "i am Dunban, attack me if you dare" | "i am Dunban, attack me if you dare!" => Some("Sh*ts is about to go wild!"),
+            "maybe we'll survive after all" => Some("I like your attitude!"),
+            "salvager code" => Some(r#"
+## The Salvager's Code
+*by rex*
+
+1) Swim life a fish, drint like one too!
+2) Always help others that help you!
+3) Make a girl cry ? That's not gonna fly; Make a girl smile ? You pass the trial!
+4) Open a chest, it might turn out great. UNtil then it's just a crate
+5) Always be closing.
+6) First have a punch-out, then drink to forget. Once you've forgotten, the freidnship's all set
+7) Never leave a debt unpaid
+"#),
+            "double spinning edge" | "double spinning edge!" => Some("Double spinning edge!!\n*Steal the agro and die*"),
+            _ => None
+        };
+
+        if let Some(r) = reply {
+            let _ = payload.message.channel_id.send_message(&ctx.skynet, MessageBuilder::new().set_content(r)).await;
+        }
     }
 }

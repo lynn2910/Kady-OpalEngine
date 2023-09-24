@@ -16,6 +16,10 @@ impl Color {
     pub fn from_hex(hex: impl Into<String>) -> Self {
         Self(u64::from_str_radix(&hex.into().replace('#', ""), 16).unwrap_or(0))
     }
+
+    pub fn from_rgb(r: u8, g: u8, b: u8) -> Self {
+        Self((r as u64) << 16 | (g as u64) << 8 | b as u64)
+    }
 }
 
 impl HttpRessource for Color {

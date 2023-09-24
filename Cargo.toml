@@ -23,7 +23,6 @@ members = [
 ]
 resolver = "2"
 
-
 [workspace.dependencies]
 sqlx = "0.7.1"
 serde = "1.0.177"

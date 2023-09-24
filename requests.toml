@@ -36,6 +36,8 @@ create = "INSERT INTO `guilds` (id) VALUES (?);"
 ensure_get = "INSERT IGNORE INTO `guilds` (`id`) VALUES (?); SELECT guilds.*, gcg.enabled AS ghostping_enabled, gcg.channel AS ghostping_channel, gcj.enabled AS join_enabled, gcj.channel AS join_channel, gcj.message AS join_message, gcl.enabled AS leave_enabled, gcl.channel AS leave_channel, gcl.message AS leave_message, gcx.enabled AS xp_enabled, g.enabled AS logs_enabled, gcs.enabled AS suggestions_enabled, gcs.channel AS suggestions_channel, x.enabled AS xp_enabled, x.cooldown AS xp_cooldown, x.default_lvl AS xp_default_lvl, x.default_xp AS xp_default_xp, gc.enabled AS captcha_enabled, gc.channel AS captcha_channel, gc.role AS captcha_role FROM guilds LEFT JOIN guild_config_ghostping gcg on guilds.id = gcg.guild_id LEFT JOIN guild_config_join gcj on guilds.id = gcj.guild_id LEFT JOIN guild_config_leave gcl on guilds.id = gcl.guild_id LEFT JOIN guild_config_xp gcx on guilds.id = gcx.guild_id LEFT JOIN guild_config_logs g on guilds.id = g.guild_id LEFT JOIN guild_config_suggestions gcs on guilds.id = gcs.guild_id LEFT JOIN guild_config_xp x on guilds.id = x.guild_id LEFT JOIN guild_config_captcha gc on guilds.id = gc.guild_id WHERE id = ?;"
 update_last_seen = "UPDATE `guilds` SET `last_seen` = ? WHERE `id` = ?;"
 update_last_edited_timestamp = "UPDATE `guilds` SET `last_edited_timestamp` = ? WHERE `id` = ?;"
+delete = "DELETE FROM `guilds` WHERE id = ?;"
+has = "SELECT 1 FROM guilds WHERE id = ?;"
 
 [guilds.logs]
 create = "INSERT INTO `guild_logs` (`guild`, `author`, `action`, `target`, `reason`, `timestamp`) VALUES (?, ?, ?, ?, ?, ?);"
@@ -66,6 +68,6 @@ get_question_random_without_last = "SELECT * FROM cookies_quiz_questions WHERE i
 get_user = "SELECT * FROM cookies_user_quiz WHERE user = ? AND date = CURDATE();"
 insert_user = "INSERT INTO cookies_user_quiz (id, user) VALUE (?, ?);"
 update_user_question = "UPDATE cookies_user_quiz SET id = ?, date = CURDATE() WHERE user = ?;"
-question_completed = "UPDATE cookies_user_quiz SET completed = true WHERE user = ?;"
+question_completed = "UPDATE cookies_user_quiz SET completed = true WHERE user = ? AND date = CURDATE();"
 get_all_possible_answers = "SELECT * FROM cookies_quiz_answers WHERE id = ?;"
 clear_users = "DELETE FROM cookies_quiz_answers WHERE date != CURDATE()"

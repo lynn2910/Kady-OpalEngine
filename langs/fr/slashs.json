@@ -8,6 +8,35 @@
         "label": "Moyenne des latences: {median}ms",
         "emoji": "\uD83E\uDD80"
       }
+    },
+    "avatar": {
+      "avatar_of": "> **Avatar de** [`{name}`]({link})**:**",
+      "footer": "Couleur vibrante: {hex}"
+    },
+    "banner": {
+      "banner_of": "> **Bannière de** [`{name}`]({link})**:**",
+      "footer": "Couleur vibrante: #{hex}",
+      "no_banner": "> ❌ ** ** **Cet utilisateur ne possède pas de bannière.**"
+    },
+    "rateit": {
+      "msg": "> 📒 ** ** **Vous avez eu une note de** `{n}/20` **!**"
+    },
+    "welcome": {
+      "msg": "> 👋 ** ** **Bienvenue !**"
+    },
+    "8ball": {
+      "msg": "> 🎱 {question}\n\n`{author}`, **{answer}**",
+      "without_question": "> 🎱 `{author}`, **{answer}**",
+      "choices": {
+        "0": "Je pense que oui.",
+        "1": "Peut-être.",
+        "2": "Pourquoi pas ?",
+        "3": "Ma source m'a dit que non.",
+        "4": "Hors de question !",
+        "5": "Les signes indiquent que oui.",
+        "6": "Très douteux...",
+        "7": "C'est décidément le cas."
+      }
     }
   }
 }

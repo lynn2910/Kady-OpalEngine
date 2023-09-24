@@ -10,10 +10,12 @@ use client::models::interaction::InteractionDataOptionValue;
 use client::models::message::MessageBuilder;
 use database::Database;
 use database::model::guild::Guild;
-use translation::fmt::formatter::Formatter;
 use translation::message;
 use crate::assets;
 use crate::scripts::get_guild_locale;
+use crate::crates::error_broadcaster::*;
+use crate::broadcast_error;
+use crate::scripts::slashs::internal_error;
 
 pub(crate) async fn triggered(ctx: &Context, payload: &InteractionCreate) {
     let local = get_guild_locale(&payload.interaction.guild_locale);
@@ -37,6 +39,21 @@ pub(crate) async fn triggered(ctx: &Context, payload: &InteractionCreate) {
             Err(e) => {
                 error!(target: "Runtime", "An error occured while acquiring the guild informations: {e:#?}");
                 cannot_get_guild_data(ctx, payload).await;
+
+                broadcast_error!(
+                    localisation: BroadcastLocalisation::default()
+                        .set_guild(payload.interaction.guild_id.clone())
+                        .set_channel(payload.interaction.channel_id.clone())
+                        .set_code_path("core/src/scripts/slashs/citation.rs:47"),
+                    interaction: BroadcastInteraction::default()
+                        .set_name("citation")
+                        .set_type(BroadcastInteractionType::SlashCommand),
+                    details: BroadcastDetails::default()
+                        .add("error", format!("{e:#?}"))
+                        .add("reason", "Cannot get the guild data"),
+                    ctx.skynet.as_ref()
+                );
+
                 return;
             }
         }
@@ -48,7 +65,6 @@ pub(crate) async fn triggered(ctx: &Context, payload: &InteractionCreate) {
     }
 
     // we check if the channel exist
-    #[allow(clippy::unnecessary_operation)]
     {
         if let Some(id) = guild_data.citation_channel.clone() {
             match ctx.skynet.fetch_channel(&id.into()).await {
@@ -56,33 +72,43 @@ pub(crate) async fn triggered(ctx: &Context, payload: &InteractionCreate) {
                     Ok(_) => (),
                     Err(e) => {
                         error!(target: "Runtime", "An error was received from the api while fetching the citation's channel: {e:#?}");
-                        let _ = payload.interaction.reply(
-                            &ctx.skynet,
-                            MessageBuilder::new()
-                                .set_content(
-                                    message!(
-                                    local,
-                                    "errors::internal_error",
-                                    Formatter::new().add("code", "12002")
-                                )
-                                )
-                        ).await;
+                        internal_error(ctx, &payload.interaction, local , "12002").await;
+
+                        broadcast_error!(
+                            localisation: BroadcastLocalisation::default()
+                                .set_guild(payload.interaction.guild_id.clone())
+                                .set_channel(payload.interaction.channel_id.clone())
+                                .set_code_path("core/src/scripts/slashs/citation.rs:74"),
+                            interaction: BroadcastInteraction::default()
+                                .set_name("citation")
+                                .set_type(BroadcastInteractionType::SlashCommand),
+                            details: BroadcastDetails::default()
+                                .add("error", format!("{e:#?}"))
+                                .add("reason", "Cannot fetch the citation's channel"),
+                            ctx.skynet.as_ref()
+                        );
+
                         return;
                     }
                 },
                 Err(e) => {
                     error!(target: "Runtime", "An error occured while trying to fetch the citation's channel: {e:#?}");
-                    let _ = payload.interaction.reply(
-                        &ctx.skynet,
-                        MessageBuilder::new()
-                            .set_content(
-                                message!(
-                                    local,
-                                    "errors::internal_error",
-                                    Formatter::new().add("code", "12001")
-                                )
-                            )
-                    ).await;
+                    internal_error(ctx, &payload.interaction, local , "12001").await;
+
+                    broadcast_error!(
+                        localisation: BroadcastLocalisation::default()
+                            .set_guild(payload.interaction.guild_id.clone())
+                            .set_channel(payload.interaction.channel_id.clone())
+                            .set_code_path("core/src/scripts/slashs/citation.rs:103"),
+                        interaction: BroadcastInteraction::default()
+                            .set_name("citation")
+                            .set_type(BroadcastInteractionType::SlashCommand),
+                        details: BroadcastDetails::default()
+                            .add("error", format!("{e:#?}"))
+                            .add("reason", "Cannot fetch the citation's channel"),
+                        ctx.skynet.as_ref()
+                    );
+
                     return;
                 }
             }
@@ -101,67 +127,81 @@ pub(crate) async fn triggered(ctx: &Context, payload: &InteractionCreate) {
                         match &t.value {
                             Some(InteractionDataOptionValue::String(s)) => s.clone(),
                             _ => {
-                                let _ = payload.interaction.reply(
-                                    &ctx.skynet,
-                                    MessageBuilder::new()
-                                        .set_content(
-                                             message!(
-                                                guild_data.lang,
-                                                "errors::internal_error",
-                                                Formatter::new().add("code", "12006")
-                                            )
-                                        )
-                                        .set_ephemeral(true)
-                                ).await;
+                                internal_error(ctx, &payload.interaction, local , "12006").await;
+
+                                broadcast_error!(
+                                    localisation: BroadcastLocalisation::default()
+                                        .set_guild(payload.interaction.guild_id.clone())
+                                        .set_channel(payload.interaction.channel_id.clone())
+                                        .set_code_path("core/src/scripts/slashs/citation.rs:133"),
+                                    interaction: BroadcastInteraction::default()
+                                        .set_name("citation")
+                                        .set_type(BroadcastInteractionType::SlashCommand),
+                                    details: BroadcastDetails::default()
+                                        .add("error", "Cannot get the citation's text")
+                                        .add("reason", "The text is not a string"),
+                                    ctx.skynet.as_ref()
+                                );
+
                                 return;
                             }
                         }
                     } else {
-                        let _ = payload.interaction.reply(
-                            &ctx.skynet,
-                            MessageBuilder::new()
-                                .set_content(
-                                    message!(
-                            guild_data.lang,
-                            "errors::internal_error",
-                            Formatter::new().add("code", "12005")
-                        )
-                                )
-                                .set_ephemeral(true)
-                        ).await;
+                        internal_error(ctx, &payload.interaction, local , "12005").await;
+
+                        broadcast_error!(
+                            localisation: BroadcastLocalisation::default()
+                                .set_guild(payload.interaction.guild_id.clone())
+                                .set_channel(payload.interaction.channel_id.clone())
+                                .set_code_path("core/src/scripts/slashs/citation.rs:152"),
+                            interaction: BroadcastInteraction::default()
+                                .set_name("citation")
+                                .set_type(BroadcastInteractionType::SlashCommand),
+                            details: BroadcastDetails::default()
+                                .add("error", "Cannot get the citation's text")
+                                .add("reason", "The text is not a string"),
+                            ctx.skynet.as_ref()
+                        );
+
                         return;
                     }
                 },
                 None => {
-                    let _ = payload.interaction.reply(
-                        &ctx.skynet,
-                        MessageBuilder::new()
-                            .set_content(
-                                message!(
-                            guild_data.lang,
-                            "errors::internal_error",
-                            Formatter::new().add("code", "12004")
-                        )
-                            )
-                            .set_ephemeral(true)
-                    ).await;
+                    internal_error(ctx, &payload.interaction, local , "12004").await;
+
+                    broadcast_error!(
+                        localisation: BroadcastLocalisation::default()
+                            .set_guild(payload.interaction.guild_id.clone())
+                            .set_channel(payload.interaction.channel_id.clone())
+                            .set_code_path("core/src/scripts/slashs/citation.rs:171"),
+                        interaction: BroadcastInteraction::default()
+                            .set_name("citation")
+                            .set_type(BroadcastInteractionType::SlashCommand),
+                        details: BroadcastDetails::default()
+                            .add("error", "Cannot get the citation's text")
+                            .add("reason", "The text is not a string"),
+                        ctx.skynet.as_ref()
+                    );
                     return;
                 }
             }
         },
         None => {
-            let _ = payload.interaction.reply(
-                &ctx.skynet,
-                MessageBuilder::new()
-                    .set_content(
-                        message!(
-                            guild_data.lang,
-                            "errors::internal_error",
-                            Formatter::new().add("code", "12003")
-                        )
-                    )
-                    .set_ephemeral(true)
-            ).await;
+            internal_error(ctx, &payload.interaction, local , "12003").await;
+
+            broadcast_error!(
+                localisation: BroadcastLocalisation::default()
+                    .set_guild(payload.interaction.guild_id.clone())
+                    .set_channel(payload.interaction.channel_id.clone())
+                    .set_code_path("core/src/scripts/slashs/citation.rs:190"),
+                interaction: BroadcastInteraction::default()
+                    .set_name("citation")
+                    .set_type(BroadcastInteractionType::SlashCommand),
+                details: BroadcastDetails::default()
+                    .add("error", "Cannot get the citation's text")
+                    .add("reason", "The text is not a string"),
+                ctx.skynet.as_ref()
+            );
             return;
         }
     };
@@ -204,7 +244,8 @@ pub(crate) async fn triggered(ctx: &Context, payload: &InteractionCreate) {
     let channel_id = guild_data.citation_channel.unwrap();
     let citation = ctx.skynet.send_message(
         &channel_id.into(),
-        msg
+        msg,
+        None
     ).await;
 
     match citation {
@@ -217,33 +258,39 @@ pub(crate) async fn triggered(ctx: &Context, payload: &InteractionCreate) {
             ).await;
         },
         Ok(Err(_)) => {
-            let _ = payload.interaction.reply(
-                &ctx.skynet,
-                MessageBuilder::new()
-                    .set_content(
-                        message!(
-                            guild_data.lang,
-                            "errors::internal_error",
-                            Formatter::new().add("code", "12007")
-                        )
-                    )
-                    .set_ephemeral(true)
-            ).await;
+            internal_error(ctx, &payload.interaction, local , "12007").await;
+
+            broadcast_error!(
+                localisation: BroadcastLocalisation::default()
+                    .set_guild(payload.interaction.guild_id.clone())
+                    .set_channel(payload.interaction.channel_id.clone())
+                    .set_code_path("core/src/scripts/slashs/citation.rs:268"),
+                interaction: BroadcastInteraction::default()
+                    .set_name("citation")
+                    .set_type(BroadcastInteractionType::SlashCommand),
+                details: BroadcastDetails::default()
+                    .add("error", "Cannot send the citation")
+                    .add("reason", "An error occured while sending the citation"),
+                ctx.skynet.as_ref()
+            );
         }
         Err(e) => {
             error!(target: "Runtime", "An error occured while sending a citation: {e:#?}");
-            let _ = payload.interaction.reply(
-                &ctx.skynet,
-                MessageBuilder::new()
-                    .set_content(
-                        message!(
-                            guild_data.lang,
-                            "errors::internal_error",
-                            Formatter::new().add("code", "12008")
-                        )
-                    )
-                    .set_ephemeral(true)
-            ).await;
+            internal_error(ctx, &payload.interaction, local , "12008").await;
+
+            broadcast_error!(
+                localisation: BroadcastLocalisation::default()
+                    .set_guild(payload.interaction.guild_id.clone())
+                    .set_channel(payload.interaction.channel_id.clone())
+                    .set_code_path("core/src/scripts/slashs/citation.rs:283"),
+                interaction: BroadcastInteraction::default()
+                    .set_name("citation")
+                    .set_type(BroadcastInteractionType::SlashCommand),
+                details: BroadcastDetails::default()
+                    .add("error", format!("{e:#?}"))
+                    .add("reason", "An error occured while sending the citation"),
+                ctx.skynet.as_ref()
+            );
         }
     }
 }

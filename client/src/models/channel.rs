@@ -35,7 +35,7 @@ impl ChannelId {
         http: &Http,
         payload: MessageBuilder
     ) -> Result<ApiResult<Message>> {
-        http.send_message(self, payload).await
+        http.send_message(self, payload, None).await
     }
 }
 

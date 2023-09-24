@@ -9,6 +9,8 @@ use translation::message;
 use crate::crates::cookies;
 use crate::scripts::{get_guild_locale, get_user_id};
 use crate::scripts::slashs::internal_error;
+use crate::crates::error_broadcaster::*;
+use crate::broadcast_error;
 
 const TOLERANCE: usize = 1;
 
@@ -19,6 +21,21 @@ pub(crate) async fn triggered(ctx: &Context, payload: &InteractionCreate) {
         Some(d) => d,
         None => {
             internal_error(ctx, &payload.interaction, local, "30001").await;
+
+            broadcast_error!(
+                localisation: BroadcastLocalisation::default()
+                    .set_guild(payload.interaction.guild_id.clone())
+                    .set_channel(payload.interaction.channel_id.clone())
+                    .set_code_path("core/src/scripts/modal/cookie_quiz_answer.rs:29"),
+                interaction: BroadcastInteraction::default()
+                    .set_name("cookie_quiz_answer")
+                    .set_type(BroadcastInteractionType::Modal),
+                details: BroadcastDetails::default()
+                    .add("code", "30001")
+                    .add("error", "Cannot get the database from the Context"),
+                ctx.skynet.as_ref()
+            );
+
             return;
         }
     };
@@ -33,6 +50,21 @@ pub(crate) async fn triggered(ctx: &Context, payload: &InteractionCreate) {
                 &ctx.skynet,
                 MessageBuilder::new().set_content(message!(local, "errors::cannot_get_user_id"))
             ).await;
+
+            broadcast_error!(
+                localisation: BroadcastLocalisation::default()
+                    .set_guild(payload.interaction.guild_id.clone())
+                    .set_channel(payload.interaction.channel_id.clone())
+                    .set_code_path("core/src/scripts/modal/cookie_quiz_answer.rs:56"),
+                interaction: BroadcastInteraction::default()
+                    .set_name("cookie_quiz_answer")
+                    .set_type(BroadcastInteractionType::Modal),
+                details: BroadcastDetails::default()
+                    .add("code", "30002")
+                    .add("error", "Cannot get the user id"),
+                ctx.skynet.as_ref()
+            );
+
             return;
         }
     };
@@ -52,6 +84,21 @@ pub(crate) async fn triggered(ctx: &Context, payload: &InteractionCreate) {
         Err(e) => {
             error!(target: "Runtime", "Cannot fetch the user question, therefor he responded to the modal: {e:#?}");
             internal_error(ctx, &payload.interaction, local, "30002").await;
+
+            broadcast_error!(
+                localisation: BroadcastLocalisation::default()
+                    .set_guild(payload.interaction.guild_id.clone())
+                    .set_channel(payload.interaction.channel_id.clone())
+                    .set_code_path("core/src/scripts/modal/cookie_quiz_answer.rs:85"),
+                interaction: BroadcastInteraction::default()
+                    .set_name("cookie_quiz_answer")
+                    .set_type(BroadcastInteractionType::Modal),
+                details: BroadcastDetails::default()
+                    .add("code", "30003")
+                    .add("error", "Cannot fetch the user question"),
+                ctx.skynet.as_ref()
+            );
+
             return;
         }
     };
@@ -71,6 +118,21 @@ pub(crate) async fn triggered(ctx: &Context, payload: &InteractionCreate) {
         Err(e) => {
             error!(target: "Runtime", "Cannot fetch all possible answers from the user question, therefor he responded to the modal and he exist in the db: {e:#?}");
             internal_error(ctx, &payload.interaction, local, "30003").await;
+
+            broadcast_error!(
+                localisation: BroadcastLocalisation::default()
+                    .set_guild(payload.interaction.guild_id.clone())
+                    .set_channel(payload.interaction.channel_id.clone())
+                    .set_code_path("core/src/scripts/modal/cookie_quiz_answer.rs:115"),
+                interaction: BroadcastInteraction::default()
+                    .set_name("cookie_quiz_answer")
+                    .set_type(BroadcastInteractionType::Modal),
+                details: BroadcastDetails::default()
+                    .add("code", "30004")
+                    .add("error", "Cannot fetch all possible answers from the user question"),
+                ctx.skynet.as_ref()
+            );
+
             return;
         }
     };
@@ -83,6 +145,21 @@ pub(crate) async fn triggered(ctx: &Context, payload: &InteractionCreate) {
                     Some(c) => c,
                     None => {
                         internal_error(ctx, &payload.interaction, local, "30006").await;
+
+                        broadcast_error!(
+                            localisation: BroadcastLocalisation::default()
+                                .set_guild(payload.interaction.guild_id.clone())
+                                .set_channel(payload.interaction.channel_id.clone())
+                                .set_code_path("core/src/scripts/modal/cookie_quiz_answer.rs:141"),
+                            interaction: BroadcastInteraction::default()
+                                .set_name("cookie_quiz_answer")
+                                .set_type(BroadcastInteractionType::Modal),
+                            details: BroadcastDetails::default()
+                                .add("code", "30006")
+                                .add("error", "Cannot get the first component"),
+                            ctx.skynet.as_ref()
+                        );
+
                         return;
                     }
                 };
@@ -91,6 +168,21 @@ pub(crate) async fn triggered(ctx: &Context, payload: &InteractionCreate) {
                     Component::ActionRow(r) => r,
                     _ => {
                         internal_error(ctx, &payload.interaction, local, "30006").await;
+
+                        broadcast_error!(
+                            localisation: BroadcastLocalisation::default()
+                                .set_guild(payload.interaction.guild_id.clone())
+                                .set_channel(payload.interaction.channel_id.clone())
+                                .set_code_path("core/src/scripts/modal/cookie_quiz_answer.rs:160"),
+                            interaction: BroadcastInteraction::default()
+                                .set_name("cookie_quiz_answer")
+                                .set_type(BroadcastInteractionType::Modal),
+                            details: BroadcastDetails::default()
+                                .add("code", "30006")
+                                .add("error", "Cannot get the first component"),
+                            ctx.skynet.as_ref()
+                        );
+
                         return;
                     }
                 };
@@ -110,27 +202,102 @@ pub(crate) async fn triggered(ctx: &Context, payload: &InteractionCreate) {
                                 Some(v) => v.to_string(),
                                 None => {
                                     internal_error(ctx, &payload.interaction, local, "30007").await;
+
+                                    broadcast_error!(
+                                        localisation: BroadcastLocalisation::default()
+                                            .set_guild(payload.interaction.guild_id.clone())
+                                            .set_channel(payload.interaction.channel_id.clone())
+                                            .set_code_path("core/src/scripts/modal/cookie_quiz_answer.rs:185"),
+                                        interaction: BroadcastInteraction::default()
+                                            .set_name("cookie_quiz_answer")
+                                            .set_type(BroadcastInteractionType::Modal),
+                                        details: BroadcastDetails::default()
+                                            .add("code", "30007")
+                                            .add("error", "Cannot get the value of the text input"),
+                                        ctx.skynet.as_ref()
+                                    );
+
                                     return;
                                 }
                             }
                         } else {
                             internal_error(ctx, &payload.interaction, local, "30006").await;
+
+                            broadcast_error!(
+                                localisation: BroadcastLocalisation::default()
+                                    .set_guild(payload.interaction.guild_id.clone())
+                                    .set_channel(payload.interaction.channel_id.clone())
+                                    .set_code_path("core/src/scripts/modal/cookie_quiz_answer.rs:230"),
+                                interaction: BroadcastInteraction::default()
+                                    .set_name("cookie_quiz_answer")
+                                    .set_type(BroadcastInteractionType::Modal),
+                                details: BroadcastDetails::default()
+                                    .add("code", "30006")
+                                    .add("error", "Cannot get the first component"),
+                                ctx.skynet.as_ref()
+                            );
+
                             return;
                         }
                     },
                     None => {
                         internal_error(ctx, &payload.interaction, local, "30006").await;
+
+                        broadcast_error!(
+                            localisation: BroadcastLocalisation::default()
+                                .set_guild(payload.interaction.guild_id.clone())
+                                .set_channel(payload.interaction.channel_id.clone())
+                                .set_code_path("core/src/scripts/modal/cookie_quiz_answer.rs:250"),
+                            interaction: BroadcastInteraction::default()
+                                .set_name("cookie_quiz_answer")
+                                .set_type(BroadcastInteractionType::Modal),
+                            details: BroadcastDetails::default()
+                                .add("code", "30006")
+                                .add("error", "Cannot get the first component"),
+                            ctx.skynet.as_ref()
+                        );
+
                         return;
                     }
                 }
             },
             None => {
                 internal_error(ctx, &payload.interaction, local, "30005").await;
+
+                broadcast_error!(
+                    localisation: BroadcastLocalisation::default()
+                        .set_guild(payload.interaction.guild_id.clone())
+                        .set_channel(payload.interaction.channel_id.clone())
+                        .set_code_path("core/src/scripts/modal/cookie_quiz_answer.rs:267"),
+                    interaction: BroadcastInteraction::default()
+                        .set_name("cookie_quiz_answer")
+                        .set_type(BroadcastInteractionType::Modal),
+                    details: BroadcastDetails::default()
+                        .add("code", "30005")
+                        .add("error", "Cannot get the interaction data"),
+                    ctx.skynet.as_ref()
+                );
+
                 return;
             }
         },
         None => {
             internal_error(ctx, &payload.interaction, local, "30004").await;
+
+            broadcast_error!(
+                localisation: BroadcastLocalisation::default()
+                    .set_guild(payload.interaction.guild_id.clone())
+                    .set_channel(payload.interaction.channel_id.clone())
+                    .set_code_path("core/src/scripts/modal/cookie_quiz_answer.rs:291"),
+                interaction: BroadcastInteraction::default()
+                    .set_name("cookie_quiz_answer")
+                    .set_type(BroadcastInteractionType::Modal),
+                details: BroadcastDetails::default()
+                    .add("code", "30005")
+                    .add("error", "Cannot get the interaction data"),
+                ctx.skynet.as_ref()
+            );
+
             return;
         }
     };
@@ -152,6 +319,21 @@ pub(crate) async fn triggered(ctx: &Context, payload: &InteractionCreate) {
         if let Err(e) = question_completed_result {
             error!(target: "Runtime", "Cannot declare the user cookie question as completed: {e:#?}");
             internal_error(ctx, &payload.interaction, local, "30008").await;
+
+            broadcast_error!(
+                localisation: BroadcastLocalisation::default()
+                    .set_guild(payload.interaction.guild_id.clone())
+                    .set_channel(payload.interaction.channel_id.clone())
+                    .set_code_path("core/src/scripts/modal/cookie_quiz_answer.rs:327"),
+                interaction: BroadcastInteraction::default()
+                    .set_name("cookie_quiz_answer")
+                    .set_type(BroadcastInteractionType::Modal),
+                details: BroadcastDetails::default()
+                    .add("code", "30008")
+                    .add("error", "Cannot declare the user cookie question as completed"),
+                ctx.skynet.as_ref()
+            );
+
             return;
         }
 
@@ -164,6 +346,21 @@ pub(crate) async fn triggered(ctx: &Context, payload: &InteractionCreate) {
         if let Err(e) = cookie_given {
             error!(target: "Runtime", "Cannot give a cookie to the user: {e:#?}");
             internal_error(ctx, &payload.interaction, local, "30009").await;
+
+            broadcast_error!(
+                localisation: BroadcastLocalisation::default()
+                    .set_guild(payload.interaction.guild_id.clone())
+                    .set_channel(payload.interaction.channel_id.clone())
+                    .set_code_path("core/src/scripts/modal/cookie_quiz_answer.rs:350"),
+                interaction: BroadcastInteraction::default()
+                    .set_name("cookie_quiz_answer")
+                    .set_type(BroadcastInteractionType::Modal),
+                details: BroadcastDetails::default()
+                    .add("code", "30009")
+                    .add("error", "Cannot give a cookie to the user"),
+                ctx.skynet.as_ref()
+            );
+
             return;
         }
 
@@ -185,6 +382,21 @@ pub(crate) async fn triggered(ctx: &Context, payload: &InteractionCreate) {
         if let Err(e) = question_completed_result {
             error!(target: "Runtime", "Cannot declare the user cookie question as completed: {e:#?}");
             internal_error(ctx, &payload.interaction, local, "30008").await;
+
+            broadcast_error!(
+                localisation: BroadcastLocalisation::default()
+                    .set_guild(payload.interaction.guild_id.clone())
+                    .set_channel(payload.interaction.channel_id.clone())
+                    .set_code_path("core/src/scripts/modal/cookie_quiz_answer.rs:386"),
+                interaction: BroadcastInteraction::default()
+                    .set_name("cookie_quiz_answer")
+                    .set_type(BroadcastInteractionType::Modal),
+                details: BroadcastDetails::default()
+                    .add("code", "30008")
+                    .add("error", "Cannot declare the user cookie question as completed"),
+                ctx.skynet.as_ref()
+            );
+
             return;
         }
 
@@ -198,6 +410,21 @@ pub(crate) async fn triggered(ctx: &Context, payload: &InteractionCreate) {
         if let Err(e) = nuggets_given {
             error!(target: "Runtime", "Cannot give 3 nuggets to the user: {e:#?}");
             internal_error(ctx, &payload.interaction, local, "30010").await;
+
+            broadcast_error!(
+                localisation: BroadcastLocalisation::default()
+                    .set_guild(payload.interaction.guild_id.clone())
+                    .set_channel(payload.interaction.channel_id.clone())
+                    .set_code_path("core/src/scripts/modal/cookie_quiz_answer.rs:414"),
+                interaction: BroadcastInteraction::default()
+                    .set_name("cookie_quiz_answer")
+                    .set_type(BroadcastInteractionType::Modal),
+                details: BroadcastDetails::default()
+                    .add("code", "30010")
+                    .add("error", "Cannot give 3 nuggets to the user"),
+                ctx.skynet.as_ref()
+            );
+
             return;
         }
 

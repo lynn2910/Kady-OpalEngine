@@ -65,11 +65,13 @@ pub struct UserCookies {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GuildRequests {
     pub get: String,
+    pub has: String,
     pub ensure: String,
     pub create: String,
     pub ensure_get: String,
     pub update_last_seen: String,
     pub update_last_edited_timestamp: String,
+    pub delete: String,
     pub logs: GuildLogs,
     pub channel_logs: GuildChannelLogs,
     pub xp: GuildXp,

@@ -8,6 +8,8 @@ use database::model::users::User;
 use translation::message;
 use crate::scripts::{get_guild_locale, get_user_id};
 use crate::scripts::slashs::internal_error;
+use crate::crates::error_broadcaster::*;
+use crate::broadcast_error;
 
 mod give_cookies {
     use std::ops::Deref;
@@ -25,6 +27,8 @@ mod give_cookies {
     use crate::crates::cookies::notify_new_cookie;
     use crate::scripts::{get_user, get_user_id};
     use crate::scripts::slashs::{internal_error, internal_error_deferred};
+    use crate::crates::error_broadcaster::*;
+    use crate::broadcast_error;
 
     pub(crate) async fn triggered(
         ctx: &Context,
@@ -39,6 +43,21 @@ mod give_cookies {
             Some(opts) => opts,
             _ => {
                 internal_error(ctx, &payload.interaction, local, "15003").await;
+
+                broadcast_error!(
+                    localisation: BroadcastLocalisation::default()
+                        .set_guild(payload.interaction.guild_id.clone())
+                        .set_channel(payload.interaction.channel_id.clone())
+                        .set_code_path("core/src/scripts/slashs/cookies.rs:give_cookies::triggered:51"),
+                    interaction: BroadcastInteraction::default()
+                        .set_name("cookies/give")
+                        .set_type(BroadcastInteractionType::SlashCommand),
+                    details: BroadcastDetails::default()
+                        .add("code", "15003")
+                        .add("reason", "Cannot acquire the interaction data options"),
+                    ctx.skynet.as_ref()
+                );
+
                 return;
             }
         };
@@ -52,11 +71,41 @@ mod give_cookies {
                     Some(InteractionDataOptionValue::String(v)) => v.to_string(),
                     _ => {
                         internal_error(ctx, &payload.interaction, local, "15004").await;
+
+                        broadcast_error!(
+                            localisation: BroadcastLocalisation::default()
+                                .set_guild(payload.interaction.guild_id.clone())
+                                .set_channel(payload.interaction.channel_id.clone())
+                                .set_code_path("core/src/scripts/slashs/cookies.rs:give_cookies::triggered:79"),
+                            interaction: BroadcastInteraction::default()
+                                .set_name("cookies/give")
+                                .set_type(BroadcastInteractionType::SlashCommand),
+                            details: BroadcastDetails::default()
+                                .add("code", "15004")
+                                .add("reason", "Cannot acquire the user ID"),
+                            ctx.skynet.as_ref()
+                        );
+
                         return;
                     }
                 }
             } else {
                 internal_error(ctx, &payload.interaction, local, "15004").await;
+
+                broadcast_error!(
+                    localisation: BroadcastLocalisation::default()
+                        .set_guild(payload.interaction.guild_id.clone())
+                        .set_channel(payload.interaction.channel_id.clone())
+                        .set_code_path("core/src/scripts/slashs/cookies.rs:give_cookies::triggered:99"),
+                    interaction: BroadcastInteraction::default()
+                        .set_name("cookies/give")
+                        .set_type(BroadcastInteractionType::SlashCommand),
+                    details: BroadcastDetails::default()
+                        .add("code", "15004")
+                        .add("reason", "Cannot acquire the user ID"),
+                    ctx.skynet.as_ref()
+                );
+
                 return;
             }
         };
@@ -93,6 +142,21 @@ mod give_cookies {
                             .set_content(message!(local, "errors::cannot_acquire_user"))
                             .set_ephemeral(true)
                     ).await;
+
+                    broadcast_error!(
+                        localisation: BroadcastLocalisation::default()
+                            .set_guild(payload.interaction.guild_id.clone())
+                            .set_channel(payload.interaction.channel_id.clone())
+                            .set_code_path("core/src/scripts/slashs/cookies.rs:give_cookies::triggered:150"),
+                        interaction: BroadcastInteraction::default()
+                            .set_name("cookies/give")
+                            .set_type(BroadcastInteractionType::SlashCommand),
+                        details: BroadcastDetails::default()
+                            .add("code", "15004")
+                            .add("reason", "Cannot acquire the user"),
+                        ctx.skynet.as_ref()
+                    );
+
                     return;
                 }
             }
@@ -128,11 +192,41 @@ mod give_cookies {
                     }
                     _ => {
                         internal_error(ctx, &payload.interaction, local, "15005").await;
+
+                        broadcast_error!(
+                            localisation: BroadcastLocalisation::default()
+                                .set_guild(payload.interaction.guild_id.clone())
+                                .set_channel(payload.interaction.channel_id.clone())
+                                .set_code_path("core/src/scripts/slashs/cookies.rs:give_cookies::triggered:200"),
+                            interaction: BroadcastInteraction::default()
+                                .set_name("cookies/give")
+                                .set_type(BroadcastInteractionType::SlashCommand),
+                            details: BroadcastDetails::default()
+                                .add("code", "15005")
+                                .add("reason", "Cannot acquire the number of cookies to give"),
+                            ctx.skynet.as_ref()
+                        );
+
                         return;
                     }
                 }
             } else {
                 internal_error(ctx, &payload.interaction, local, "15005").await;
+
+                broadcast_error!(
+                    localisation: BroadcastLocalisation::default()
+                        .set_guild(payload.interaction.guild_id.clone())
+                        .set_channel(payload.interaction.channel_id.clone())
+                        .set_code_path("core/src/scripts/slashs/cookies.rs:give_cookies::triggered:220"),
+                    interaction: BroadcastInteraction::default()
+                        .set_name("cookies/give")
+                        .set_type(BroadcastInteractionType::SlashCommand),
+                    details: BroadcastDetails::default()
+                        .add("code", "15005")
+                        .add("reason", "Cannot acquire the number of cookies to give"),
+                    ctx.skynet.as_ref()
+                );
+
                 return;
             }
         };
@@ -150,6 +244,21 @@ mod give_cookies {
             Err(e) => {
                 error!(target: "Runtime", "An error occured while fetching all cookies to donate: {e:#?}");
                 internal_error_deferred(ctx, &payload.interaction, local, "15006").await;
+
+                broadcast_error!(
+                    localisation: BroadcastLocalisation::default()
+                        .set_guild(payload.interaction.guild_id.clone())
+                        .set_channel(payload.interaction.channel_id.clone())
+                        .set_code_path("core/src/scripts/slashs/cookies.rs:give_cookies::triggered:252"),
+                    interaction: BroadcastInteraction::default()
+                        .set_name("cookies/give")
+                        .set_type(BroadcastInteractionType::SlashCommand),
+                    details: BroadcastDetails::default()
+                        .add("code", "15006")
+                        .add("reason", "Cannot fetch all cookies to donate"),
+                    ctx.skynet.as_ref()
+                );
+
                 return;
             }
         };
@@ -185,6 +294,21 @@ mod give_cookies {
             if let Err(e) = removed_cookie {
                 error!(target: "Runtime", "An error occured while removing a cookies that was donate: {e:#?}");
                 internal_error_deferred(ctx, &payload.interaction, local, "15008").await;
+
+                broadcast_error!(
+                    localisation: BroadcastLocalisation::default()
+                        .set_guild(payload.interaction.guild_id.clone())
+                        .set_channel(payload.interaction.channel_id.clone())
+                        .set_code_path("core/src/scripts/slashs/cookies.rs:give_cookies::triggered:302"),
+                    interaction: BroadcastInteraction::default()
+                        .set_name("cookies/give")
+                        .set_type(BroadcastInteractionType::SlashCommand),
+                    details: BroadcastDetails::default()
+                        .add("code", "15008")
+                        .add("reason", "Cannot remove a cookie that was donated"),
+                    ctx.skynet.as_ref()
+                );
+
                 return;
             }
 
@@ -199,6 +323,21 @@ mod give_cookies {
             if let Err(e) = cookie_given {
                 error!(target: "Runtime", "An error occured while removing a cookies that was donate: {e:#?}");
                 internal_error_deferred(ctx, &payload.interaction, local, "15009").await;
+
+                broadcast_error!(
+                    localisation: BroadcastLocalisation::default()
+                        .set_guild(payload.interaction.guild_id.clone())
+                        .set_channel(payload.interaction.channel_id.clone())
+                        .set_code_path("core/src/scripts/slashs/cookies.rs:give_cookies::triggered:331"),
+                    interaction: BroadcastInteraction::default()
+                        .set_name("cookies/give")
+                        .set_type(BroadcastInteractionType::SlashCommand),
+                    details: BroadcastDetails::default()
+                        .add("code", "15009")
+                        .add("reason", "Cannot give a cookie"),
+                    ctx.skynet.as_ref()
+                );
+
                 return;
             }
         }
@@ -247,6 +386,7 @@ mod give_cookies {
 }
 
 mod daily {
+    use chrono::Utc;
     use log::error;
     use serde_json::Value;
     use sqlx::MySqlPool;
@@ -261,6 +401,8 @@ mod daily {
     use crate::crates::cookies;
     use crate::scripts::get_user_id;
     use crate::scripts::slashs::internal_error_deferred;
+    use crate::crates::error_broadcaster::*;
+    use crate::broadcast_error;
 
     pub(crate) async fn triggered(
         ctx: &Context,
@@ -281,6 +423,20 @@ mod daily {
                     .set_content(message!(local, "errors::cannot_get_user_id"))
                     .set_ephemeral(true)
             ).await;
+
+            broadcast_error!(
+                    localisation: BroadcastLocalisation::default()
+                        .set_guild(payload.interaction.guild_id.clone())
+                        .set_channel(payload.interaction.channel_id.clone())
+                        .set_code_path("core/src/scripts/slashs/cookies.rs:daily:291"),
+                    interaction: BroadcastInteraction::default()
+                        .set_name("cookies/daily")
+                        .set_type(BroadcastInteractionType::SlashCommand),
+                    details: BroadcastDetails::default()
+                        .add("reason", "Cannot acquire user ID"),
+                    ctx.skynet.as_ref()
+                );
+
             return;
         }
         let user_id  = user_id.unwrap();
@@ -293,6 +449,21 @@ mod daily {
             Err(e) => {
                 error!(target: "Runtime", "Cannot fetch the user informations for the daily's cookie quiz: {e:#?}");
                 internal_error_deferred(ctx, &payload.interaction, local, "15010").await;
+
+                broadcast_error!(
+                    localisation: BroadcastLocalisation::default()
+                        .set_guild(payload.interaction.guild_id.clone())
+                        .set_channel(payload.interaction.channel_id.clone())
+                        .set_code_path("core/src/scripts/slashs/cookies.rs:daily:313"),
+                    interaction: BroadcastInteraction::default()
+                        .set_name("cookies/daily")
+                        .set_type(BroadcastInteractionType::SlashCommand),
+                    details: BroadcastDetails::default()
+                        .add("code", "15010")
+                        .add("reason", "Cannot fetch the user informations for the daily's cookie quiz"),
+                    ctx.skynet.as_ref()
+                );
+
                 return;
             }
         };
@@ -305,7 +476,19 @@ mod daily {
                 let _ = payload.interaction.update(
                     &ctx.skynet,
                     MessageBuilder::new()
-                        .set_content(message!(local, "features::cookies::quiz::already_given"))
+                        .set_content(message!(
+                            local,
+                            "features::cookies::quiz::already_given",
+                            // the date at which the user can retry the quiz is not stored in the database
+                            // but the time at which the user can get a new question is at 00:00:00 UTC
+                            // We need to give a UNIX timestamp to the user
+                            Formatter::new().add("retry_in", {
+                                let now = Utc::now();
+                                let tomorrow = now.date_naive().succ_opt().unwrap_or(Default::default());
+                                let tomorrow = tomorrow.and_hms_opt(0, 0, 0).unwrap_or(Default::default());
+                                tomorrow.timestamp()
+                            })
+                        ))
                 ).await;
                 return;
             }
@@ -317,11 +500,41 @@ mod daily {
                         Some(q) => q.clone(),
                         None => {
                             internal_error_deferred(ctx, &payload.interaction, local, "15013").await;
+
+                            broadcast_error!(
+                                localisation: BroadcastLocalisation::default()
+                                    .set_guild(payload.interaction.guild_id.clone())
+                                    .set_channel(payload.interaction.channel_id.clone())
+                                    .set_code_path("core/src/scripts/slashs/cookies.rs:daily:369"),
+                                interaction: BroadcastInteraction::default()
+                                    .set_name("cookies/daily")
+                                    .set_type(BroadcastInteractionType::SlashCommand),
+                                details: BroadcastDetails::default()
+                                    .add("code", "15013")
+                                    .add("reason", "Cannot fetch the question traduction"),
+                                ctx.skynet.as_ref()
+                            );
+
                             return;
                         }
                     }
                 } else {
                     internal_error_deferred(ctx, &payload.interaction, local, "15012").await;
+
+                    broadcast_error!(
+                        localisation: BroadcastLocalisation::default()
+                            .set_guild(payload.interaction.guild_id.clone())
+                            .set_channel(payload.interaction.channel_id.clone())
+                            .set_code_path("core/src/scripts/slashs/cookies.rs:daily:389"),
+                        interaction: BroadcastInteraction::default()
+                            .set_name("cookies/daily")
+                            .set_type(BroadcastInteractionType::SlashCommand),
+                        details: BroadcastDetails::default()
+                            .add("code", "15012")
+                            .add("reason", "Cannot fetch the questions traductions"),
+                        ctx.skynet.as_ref()
+                    );
+
                     return;
                 }
             };
@@ -359,6 +572,21 @@ mod daily {
                 Err(e) => {
                     error!(target: "Runtime", "An error occured while acquiring a random question for the daily cookie quiz: {e:#?}");
                     internal_error_deferred(ctx, &payload.interaction, local, "15011").await;
+
+                    broadcast_error!(
+                        localisation: BroadcastLocalisation::default()
+                            .set_guild(payload.interaction.guild_id.clone())
+                            .set_channel(payload.interaction.channel_id.clone())
+                            .set_code_path("core/src/scripts/slashs/cookies.rs:daily:441"),
+                        interaction: BroadcastInteraction::default()
+                            .set_name("cookies/daily")
+                            .set_type(BroadcastInteractionType::SlashCommand),
+                        details: BroadcastDetails::default()
+                            .add("code", "15011")
+                            .add("reason", "Cannot fetch a random question"),
+                        ctx.skynet.as_ref()
+                    );
+
                     return;
                 }
             };
@@ -370,11 +598,41 @@ mod daily {
                         Some(q) => q.clone(),
                         None => {
                             internal_error_deferred(ctx, &payload.interaction, local, "15013").await;
+
+                            broadcast_error!(
+                                localisation: BroadcastLocalisation::default()
+                                    .set_guild(payload.interaction.guild_id.clone())
+                                    .set_channel(payload.interaction.channel_id.clone())
+                                    .set_code_path("core/src/scripts/slashs/cookies.rs:daily:467"),
+                                interaction: BroadcastInteraction::default()
+                                    .set_name("cookies/daily")
+                                    .set_type(BroadcastInteractionType::SlashCommand),
+                                details: BroadcastDetails::default()
+                                    .add("code", "15013")
+                                    .add("reason", "Cannot fetch the question traduction"),
+                                ctx.skynet.as_ref()
+                            );
+
                             return;
                         }
                     }
                 } else {
                     internal_error_deferred(ctx, &payload.interaction, local, "15012").await;
+
+                    broadcast_error!(
+                        localisation: BroadcastLocalisation::default()
+                            .set_guild(payload.interaction.guild_id.clone())
+                            .set_channel(payload.interaction.channel_id.clone())
+                            .set_code_path("core/src/scripts/slashs/cookies.rs:daily:487"),
+                        interaction: BroadcastInteraction::default()
+                            .set_name("cookies/daily")
+                            .set_type(BroadcastInteractionType::SlashCommand),
+                        details: BroadcastDetails::default()
+                            .add("code", "15012")
+                            .add("reason", "Cannot fetch the questions traductions"),
+                        ctx.skynet.as_ref()
+                    );
+
                     return;
                 }
             };
@@ -384,6 +642,21 @@ mod daily {
             if let Err(e) = insert_result {
                 error!(target: "Runtime", "An error occured while inserting the user in the quiz table: {e:#?}");
                 internal_error_deferred(ctx, &payload.interaction, local, "15014").await;
+
+                broadcast_error!(
+                    localisation: BroadcastLocalisation::default()
+                        .set_guild(payload.interaction.guild_id.clone())
+                        .set_channel(payload.interaction.channel_id.clone())
+                        .set_code_path("core/src/scripts/slashs/cookies.rs:daily:511"),
+                    interaction: BroadcastInteraction::default()
+                        .set_name("cookies/daily")
+                        .set_type(BroadcastInteractionType::SlashCommand),
+                    details: BroadcastDetails::default()
+                        .add("code", "15014")
+                        .add("reason", "Cannot insert the user in the quiz table"),
+                    ctx.skynet.as_ref()
+                );
+
                 return;
             }
 
@@ -423,11 +696,43 @@ pub(crate) async fn triggered(ctx: &Context, payload: &InteractionCreate) {
     let data = if let Some(d) = &payload.interaction.data {
         d
     } else {
-        return internal_error(ctx, &payload.interaction, local, "15001").await
+        internal_error(ctx, &payload.interaction, local, "15001").await;
+
+        broadcast_error!(
+            localisation: BroadcastLocalisation::default()
+                .set_guild(payload.interaction.guild_id.clone())
+                .set_channel(payload.interaction.channel_id.clone())
+                .set_code_path("core/src/scripts/slashs/cookies.rs:triggered:705"),
+            interaction: BroadcastInteraction::default()
+                .set_name("cookies")
+                .set_type(BroadcastInteractionType::SlashCommand),
+            details: BroadcastDetails::default()
+                .add("code", "15001")
+                .add("reason", "Cannot acquire the interaction data"),
+            ctx.skynet.as_ref()
+        );
+
+        return;
     };
 
     if data.options.is_none() {
-        return internal_error(ctx, &payload.interaction, local, "15002").await
+        internal_error(ctx, &payload.interaction, local, "15002").await;
+
+        broadcast_error!(
+            localisation: BroadcastLocalisation::default()
+                .set_guild(payload.interaction.guild_id.clone())
+                .set_channel(payload.interaction.channel_id.clone())
+                .set_code_path("core/src/scripts/slashs/cookies.rs:triggered:725"),
+            interaction: BroadcastInteraction::default()
+                .set_name("cookies")
+                .set_type(BroadcastInteractionType::SlashCommand),
+            details: BroadcastDetails::default()
+                .add("code", "15002")
+                .add("reason", "Cannot acquire the interaction data options"),
+            ctx.skynet.as_ref()
+        );
+
+        return;
     }
     let options = data.options.as_ref().unwrap();
 

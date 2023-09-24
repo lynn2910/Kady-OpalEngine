@@ -6,6 +6,8 @@ use client::models::message::MessageBuilder;
 use translation::message;
 use crate::scripts::get_guild_locale;
 use crate::scripts::slashs::internal_error;
+use crate::broadcast_error;
+use crate::crates::error_broadcaster::*;
 
 const AVAILABLE_CATEGORIES: &[&str] = &["cookies", "xp"];
 
@@ -19,11 +21,40 @@ pub(crate) async fn triggered(
     let data = if let Some(d) = &payload.interaction.data {
         d
     } else {
-        return internal_error(ctx, &payload.interaction, local, "14001").await
+        internal_error(ctx, &payload.interaction, local, "14001").await;
+
+        broadcast_error!(
+            localisation: BroadcastLocalisation::default()
+                .set_guild(payload.interaction.guild_id.clone())
+                .set_channel(payload.interaction.channel_id.clone())
+                .set_code_path("core/src/scripts/slashs/top.rs:triggered:30"),
+            interaction: BroadcastInteraction::default()
+                .set_name("top")
+                .set_type(BroadcastInteractionType::SlashCommand),
+            details: BroadcastDetails::default()
+                .add("reason", "Cannot acquire the interaction data"),
+            ctx.skynet.as_ref()
+        );
+
+        return;
     };
 
     if data.options.is_none() {
-        return internal_error(ctx, &payload.interaction, local, "14002").await
+        internal_error(ctx, &payload.interaction, local, "14002").await;
+
+        broadcast_error!(
+            localisation: BroadcastLocalisation::default()
+                .set_guild(payload.interaction.guild_id.clone())
+                .set_channel(payload.interaction.channel_id.clone())
+                .set_code_path("core/src/scripts/slashs/top.rs:triggered:49"),
+            interaction: BroadcastInteraction::default()
+                .set_name("top")
+                .set_type(BroadcastInteractionType::SlashCommand),
+            details: BroadcastDetails::default()
+                .add("reason", "Cannot acquire the interaction data options (None)"),
+            ctx.skynet.as_ref()
+        );
+        return;
     }
     let options = data.options.as_ref().unwrap();
 
@@ -68,6 +99,8 @@ mod categories {
     use crate::scripts::{get_client_user, get_guild, get_user, get_user_id};
     use crate::scripts::slashs::{internal_error, internal_error_deferred};
     use crate::scripts::slashs::top::cannot_get_guild_data;
+    use crate::crates::error_broadcaster::*;
+    use crate::broadcast_error;
 
     pub(super) async fn xp(
         ctx: &Context,
@@ -96,6 +129,20 @@ mod categories {
                 Err(e) => {
                     error!(target: "Runtime", "An error occured while acquiring the guild informations: {e:#?}");
                     cannot_get_guild_data(ctx, payload).await;
+
+                    broadcast_error!(
+                        localisation: BroadcastLocalisation::default()
+                            .set_guild(payload.interaction.guild_id.clone())
+                            .set_channel(payload.interaction.channel_id.clone())
+                            .set_code_path("core/src/scripts/slashs/top.rs:categories::xp:74"),
+                        interaction: BroadcastInteraction::default()
+                            .set_name("top")
+                            .set_type(BroadcastInteractionType::SlashCommand),
+                        details: BroadcastDetails::default()
+                            .add("reason", "Cannot acquire the guild data from the database"),
+                        ctx.skynet.as_ref()
+                    );
+
                     return;
                 }
             }
@@ -116,7 +163,23 @@ mod categories {
             Ok(rankings) => rankings,
             Err(e) => {
                 error!(target: "Runtime", "An error occured while querying the top 10 xp: {e:#?}");
-                return internal_error(ctx, &payload.interaction, guild_data.lang, "14003").await
+                internal_error(ctx, &payload.interaction, guild_data.lang, "14003").await;
+
+                broadcast_error!(
+                    localisation: BroadcastLocalisation::default()
+                        .set_guild(payload.interaction.guild_id.clone())
+                        .set_channel(payload.interaction.channel_id.clone())
+                        .set_code_path("core/src/scripts/slashs/top.rs:categories::xp:104"),
+                    interaction: BroadcastInteraction::default()
+                        .set_name("top")
+                        .set_type(BroadcastInteractionType::SlashCommand),
+                    details: BroadcastDetails::default()
+                        .add("code", "14003")
+                        .add("reason", "Cannot acquire the top 10 xp from the database"),
+                    ctx.skynet.as_ref()
+                );
+
+                return;
             }
         };
 
@@ -174,7 +237,22 @@ mod categories {
                     Ok(q) => Some(q.rn),
                     Err(e) => {
                         error!(target: "Runtime", "An error occured while obtaining the rank of the user for the guild xp rank: {e:#?}");
-                        return internal_error_deferred(ctx, &payload.interaction, guild_data.lang, "13004").await;
+                        internal_error_deferred(ctx, &payload.interaction, guild_data.lang, "13004").await;
+
+                        broadcast_error!(
+                            localisation: BroadcastLocalisation::default()
+                                .set_guild(payload.interaction.guild_id.clone())
+                                .set_channel(payload.interaction.channel_id.clone())
+                                .set_code_path("core/src/scripts/slashs/top.rs:categories::xp:246"),
+                            interaction: BroadcastInteraction::default()
+                                .set_name("top")
+                                .set_type(BroadcastInteractionType::SlashCommand),
+                            details: BroadcastDetails::default()
+                                .add("code", "13004")
+                                .add("reason", "Cannot acquire the rank of the user for the guild xp rank"),
+                            ctx.skynet.as_ref()
+                        );
+                        return;
                     }
                 }
             } else {
@@ -249,6 +327,20 @@ mod categories {
                 Err(e) => {
                     error!(target: "Runtime", "An error occured while acquiring the guild informations: {e:#?}");
                     cannot_get_guild_data(ctx, payload).await;
+
+                    broadcast_error!(
+                        localisation: BroadcastLocalisation::default()
+                            .set_guild(payload.interaction.guild_id.clone())
+                            .set_channel(payload.interaction.channel_id.clone())
+                            .set_code_path("core/src/scripts/slashs/top.rs:categories::cookies_global:335"),
+                        interaction: BroadcastInteraction::default()
+                            .set_name("top")
+                            .set_type(BroadcastInteractionType::SlashCommand),
+                        details: BroadcastDetails::default()
+                            .add("reason", "Cannot acquire the guild data from the database"),
+                        ctx.skynet.as_ref()
+                    );
+
                     return;
                 }
             };
@@ -260,7 +352,22 @@ mod categories {
                 Ok(rankings) => rankings,
                 Err(e) => {
                     error!(target: "Runtime", "An error occured while querying the top 10 xp: {e:#?}");
-                    return internal_error(ctx, &payload.interaction, guild_data.lang, "14005").await;
+                    internal_error(ctx, &payload.interaction, guild_data.lang, "14005").await;
+
+                    broadcast_error!(
+                        localisation: BroadcastLocalisation::default()
+                            .set_guild(payload.interaction.guild_id.clone())
+                            .set_channel(payload.interaction.channel_id.clone())
+                            .set_code_path("core/src/scripts/slashs/top.rs:categories::cookies_global:361"),
+                        interaction: BroadcastInteraction::default()
+                            .set_name("top")
+                            .set_type(BroadcastInteractionType::SlashCommand),
+                        details: BroadcastDetails::default()
+                            .add("code", "14005")
+                            .add("reason", "Cannot acquire the top 10 cookies from the database"),
+                        ctx.skynet.as_ref()
+                    );
+                    return;
                 }
             }
         };
@@ -323,6 +430,19 @@ mod categories {
                     },
                     Err(e) => {
                         error!(target: "Runtime", "An error occured while obtaining the rank of the user for the global cookies rank: {e:#?}");
+
+                        broadcast_error!(
+                            localisation: BroadcastLocalisation::default()
+                                .set_guild(payload.interaction.guild_id.clone())
+                                .set_channel(payload.interaction.channel_id.clone())
+                                .set_code_path("core/src/scripts/slashs/top.rs:categories::cookies_global:438"),
+                            interaction: BroadcastInteraction::default()
+                                .set_name("top")
+                                .set_type(BroadcastInteractionType::SlashCommand),
+                            details: BroadcastDetails::default()
+                                .add("reason", "Cannot acquire the rank of the user for the global cookies rank"),
+                            ctx.skynet.as_ref()
+                        );
                         return internal_error_deferred(ctx, &payload.interaction, guild_data.lang, "13006").await;
                     }
                 }

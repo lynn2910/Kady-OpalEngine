@@ -111,7 +111,17 @@ impl Guild {
             .bind(guild.to_string());
 
         match query.fetch_one(pool).await {
-            Ok(user) => Ok(user),
+            Ok(g) => Ok(g),
+            Err(e) => Err(Error::Database(DatabaseError::QueryError(e.to_string())))
+        }
+    }
+
+    pub async fn get_optional(pool: &MySqlPool, request: &str, guild: &GuildId) -> Result<Option<Self>> {
+        let query = sqlx::query_as::<_, Self>(request)
+            .bind(guild.to_string());
+
+        match query.fetch_optional(pool).await {
+            Ok(g) => Ok(g),
             Err(e) => Err(Error::Database(DatabaseError::QueryError(e.to_string())))
         }
     }

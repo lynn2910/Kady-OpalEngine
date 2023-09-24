@@ -1,13 +1,15 @@
 # The intents to use for the bot
 intents = 37379
-version = "3.1.1"
+version = "3.1.38"
 build = "63ecf7fdccbf4654950d34a5eca6a0af"
-langs = "C:/Users/cedic/Code/kady/OpalEngine/langs"
-pid = "C:/Users/cedic/Code/kady/OpalEngine/pid"
-dynamic_requests = "C:/Users/cedic/Code/kady/OpalEngine/requests.toml"
+langs = "C:/Users/cedic/Code/kady/Luna/langs"
+pid = "C:/Users/cedic/Code/kady/Luna/pid"
+dynamic_requests = "C:/Users/cedic/Code/kady/Luna/requests.toml"
+
 
 [security]
-archive_path = "C:/Users/cedic/Code/kady/OpalEngine/archive.saf"
+archive_path = "C:/Users/cedic/Code/kady/Luna/archive.saf"
+
 
 [api]
 # Number of times to retry a request before giving up
@@ -15,8 +17,14 @@ retry_limit= 5
 # Number of seconds to wait before retrying a request
 close_timeout = 5000
 declared_files = [
-    ["hello.txt", "C:/Users/cedic/Code/kady/OpalEngine/api/public/hello.txt", "plain/text"]
+    ["hello.txt", "C:/Users/cedic/Code/kady/Luna/api/public/hello.txt", "plain/text"]
 ]
+
+
+[client]
+guild_add_channel = "1150514577675653260"
+guild_remove_channel = "1150514577675653260"
+
 
 [status]
 # Available types:
@@ -30,10 +38,10 @@ declared_files = [
 alternate = [
     { name = "les oiseaux chanter 🐦",  type = 2, presence = "online" },
     { name = "fait des courses 🛒",     type = 3, presence = "online" },
-    { name = "{users} utilisateurs 👥", type = 3, presence = "online" },
     { name = "version {version} 📦",    type = 0, presence = "online" },
     { name = "{guilds} serveurs 🔎",    type = 3, presence = "online" },
-    { name = "lana chanter 🎶",         type = 2, presence = "online" }
+    { name = "lana chanter 🎶",         type = 2, presence = "online" },
+    { name = "avec Nariko 🎮",          type = 0, presence = "online" }
 ]
 dev = { name = "🛠️ Opération d'un développeur en cours", type = 0, presence = "dnd" }
 maintenance = { name = "🔧 Maintenance", type = 0, presence = "idle" }

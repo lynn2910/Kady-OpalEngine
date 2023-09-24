@@ -15,7 +15,8 @@ pub struct Config {
     pub pid: String,
     pub api: ApiConfig,
     pub security: SecurityConfig,
-    pub status: StatusConfig
+    pub status: StatusConfig,
+    pub client: ClientConfig
 }
 
 impl Config {
@@ -69,6 +70,11 @@ pub struct StatusConfig {
     pub unavailable: Activity,
 }
 
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct ClientConfig {
+    pub guild_add_channel: Option<String>,
+    pub guild_remove_channel: Option<String>,
+}
 
 pub fn load_from(path: String) -> Result<Config> {
     let content: String = match std::fs::read_to_string(path.clone()) {

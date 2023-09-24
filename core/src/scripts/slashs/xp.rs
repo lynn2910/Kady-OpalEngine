@@ -13,6 +13,8 @@ pub(crate) mod guild_rank {
     use translation::message;
     use crate::scripts::get_guild_locale;
     use crate::scripts::slashs::{internal_error_deferred};
+    use crate::broadcast_error;
+    use crate::crates::error_broadcaster::*;
 
     pub(crate) async fn triggered(ctx: &Context, payload: &InteractionCreate) {
         let local = get_guild_locale(&payload.interaction.guild_locale);
@@ -38,6 +40,20 @@ pub(crate) mod guild_rank {
                 Err(e) => {
                     error!(target: "Runtime", "An error occured while acquiring the guild informations: {e:#?}");
                     cannot_get_guild_data(ctx, payload).await;
+
+                    broadcast_error!(
+                        localisation: BroadcastLocalisation::default()
+                            .set_guild(payload.interaction.guild_id.clone())
+                            .set_channel(payload.interaction.channel_id.clone())
+                            .set_code_path("core/src/scripts/slashs/xp.rs:guild_rank:48"),
+                        interaction: BroadcastInteraction::default()
+                            .set_name("guild_rank")
+                            .set_type(BroadcastInteractionType::SlashCommand),
+                        details: BroadcastDetails::default()
+                            .add("reason", "Cannot acquire the guild data from the database"),
+                        ctx.skynet.as_ref()
+                    );
+
                     return;
                 }
             }
@@ -107,7 +123,21 @@ pub(crate) mod guild_rank {
                     ).await;
                     return;
                 }
-                Err(_) => { return internal_error_deferred(ctx, &payload.interaction, guild_data.lang, "13011").await }
+                Err(_) => {
+                    broadcast_error!(
+                        localisation: BroadcastLocalisation::default()
+                            .set_guild(payload.interaction.guild_id.clone())
+                            .set_channel(payload.interaction.channel_id.clone())
+                            .set_code_path("core/src/scripts/slashs/xp.rs:guild_rank:131"),
+                        interaction: BroadcastInteraction::default()
+                            .set_name("guild_rank")
+                            .set_type(BroadcastInteractionType::SlashCommand),
+                        details: BroadcastDetails::default()
+                            .add("reason", "Cannot acquire the guild member"),
+                        ctx.skynet.as_ref()
+                    );
+                    return internal_error_deferred(ctx, &payload.interaction, guild_data.lang, "13011").await
+                }
             }
         }
 
@@ -117,12 +147,38 @@ pub(crate) mod guild_rank {
                 Err(e) => {
                     error!(target: "Runtime", "An error occured while fetching a user for the guild_rank system: {e:#?}");
                     cannot_acquire_user(ctx, payload).await;
+
+                    broadcast_error!(
+                        localisation: BroadcastLocalisation::default()
+                            .set_guild(payload.interaction.guild_id.clone())
+                            .set_channel(payload.interaction.channel_id.clone())
+                            .set_code_path("core/src/scripts/slashs/xp.rs:guild_rank:155"),
+                        interaction: BroadcastInteraction::default()
+                            .set_name("guild_rank")
+                            .set_type(BroadcastInteractionType::SlashCommand),
+                        details: BroadcastDetails::default()
+                            .add("reason", "Cannot acquire the user"),
+                        ctx.skynet.as_ref()
+                    );
                     return;
                 }
             },
             Err(e) => {
                 error!(target: "Runtime", "An error occured while trying to fetch a user for the guild_rank system: {e:#?}");
                 cannot_acquire_user(ctx, payload).await;
+
+                broadcast_error!(
+                    localisation: BroadcastLocalisation::default()
+                        .set_guild(payload.interaction.guild_id.clone())
+                        .set_channel(payload.interaction.channel_id.clone())
+                        .set_code_path("core/src/scripts/slashs/xp.rs:guild_rank:174"),
+                    interaction: BroadcastInteraction::default()
+                        .set_name("guild_rank")
+                        .set_type(BroadcastInteractionType::SlashCommand),
+                    details: BroadcastDetails::default()
+                        .add("reason", "Cannot acquire the user"),
+                    ctx.skynet.as_ref()
+                );
                 return;
             }
         };
@@ -141,7 +197,20 @@ pub(crate) mod guild_rank {
             match User::ensure(&pool, requests.users.ensure.as_str(), user_id.to_string()).await {
                 Ok(()) => (),
                 Err(e) => {
-                    error!(target: "Runtime", "An error occured while ensuring the presence of the author in the database from the guild_rank command: {e:#?}")
+                    error!(target: "Runtime", "An error occured while ensuring the presence of the author in the database from the guild_rank command: {e:#?}");
+
+                    broadcast_error!(
+                        localisation: BroadcastLocalisation::default()
+                            .set_guild(payload.interaction.guild_id.clone())
+                            .set_channel(payload.interaction.channel_id.clone())
+                            .set_code_path("core/src/scripts/slashs/xp.rs:guild_rank:202"),
+                        interaction: BroadcastInteraction::default()
+                            .set_name("guild_rank")
+                            .set_type(BroadcastInteractionType::SlashCommand),
+                        details: BroadcastDetails::default()
+                            .add("reason", "Cannot ensure the presence of the user in the database"),
+                        ctx.skynet.as_ref()
+                    );
                 }
             }
         }
@@ -150,18 +219,70 @@ pub(crate) mod guild_rank {
         {
             match GuildUserXp::ensure(&pool, requests.guilds.xp.ensure.as_str(), &guild_data.id, &user.id).await {
                 Ok(_) => (),
-                Err(_) => return internal_error_deferred(ctx, &payload.interaction, guild_data.lang, "13001").await
+                Err(e) => {
+                    error!(target: "Runtime", "An error occured while ensuring the presence of the user in the database from the guild_rank command: {e:#?}");
+
+                    broadcast_error!(
+                        localisation: BroadcastLocalisation::default()
+                            .set_guild(payload.interaction.guild_id.clone())
+                            .set_channel(payload.interaction.channel_id.clone())
+                            .set_code_path("core/src/scripts/slashs/xp.rs:guild_rank:229"),
+                        interaction: BroadcastInteraction::default()
+                            .set_name("guild_rank")
+                            .set_type(BroadcastInteractionType::SlashCommand),
+                        details: BroadcastDetails::default()
+                            .add("error", format!("{e:#?}"))
+                            .add("reason", "Cannot ensure the presence of the user in the database"),
+                        ctx.skynet.as_ref()
+                    );
+                    return internal_error_deferred(ctx, &payload.interaction, guild_data.lang, "13001").await
+                }
             };
         }
 
         let xp_data = match GuildUserXp::from_pool(&pool, requests.guilds.xp.get.as_str(), &guild_data.id, &user.id).await {
             Ok(d) => d,
-            Err(_) => return internal_error_deferred(ctx, &payload.interaction, guild_data.lang, "13002").await
+            Err(e) => {
+                error!(target: "Runtime", "An error occured while ensuring the presence of the user in the database from the guild_rank command: {e:#?}");
+
+                broadcast_error!(
+                    localisation: BroadcastLocalisation::default()
+                        .set_guild(payload.interaction.guild_id.clone())
+                        .set_channel(payload.interaction.channel_id.clone())
+                        .set_code_path("core/src/scripts/slashs/xp.rs:guild_rank:251"),
+                    interaction: BroadcastInteraction::default()
+                        .set_name("guild_rank")
+                        .set_type(BroadcastInteractionType::SlashCommand),
+                    details: BroadcastDetails::default()
+                        .add("error", format!("{e:#?}"))
+                        .add("code", "13002")
+                        .add("reason", "Cannot ensure the presence of the user in the database"),
+                    ctx.skynet.as_ref()
+                );
+                return internal_error_deferred(ctx, &payload.interaction, guild_data.lang, "13002").await
+            }
         };
 
         let font_container = match ctx.get_data::<FontContainer>().await {
             Some(e) => e,
-            None => return internal_error_deferred(ctx, &payload.interaction, guild_data.lang, "13003").await
+            None => {
+                error!(target: "Runtime", "Cannot acquire the font container from the context");
+
+                broadcast_error!(
+                    localisation: BroadcastLocalisation::default()
+                        .set_guild(payload.interaction.guild_id.clone())
+                        .set_channel(payload.interaction.channel_id.clone())
+                        .set_code_path("core/src/scripts/slashs/xp.rs:guild_rank:275"),
+                    interaction: BroadcastInteraction::default()
+                        .set_name("guild_rank")
+                        .set_type(BroadcastInteractionType::SlashCommand),
+                    details: BroadcastDetails::default()
+                        .add("code", "13003")
+                        .add("reason", "Cannot acquire the font container from the context"),
+                    ctx.skynet.as_ref()
+                );
+                return internal_error_deferred(ctx, &payload.interaction, guild_data.lang, "13003").await
+            }
         };
 
         let rank = match sqlx::query_as::<_, UserXpRank>(requests.guilds.xp.get_rank.as_str())
@@ -172,6 +293,20 @@ pub(crate) mod guild_rank {
             Ok(q) => q,
             Err(e) => {
                 error!(target: "Runtime", "An error occured while obtaining the rank of the user for the guild xp rank: {e:#?}");
+
+                broadcast_error!(
+                    localisation: BroadcastLocalisation::default()
+                        .set_guild(payload.interaction.guild_id.clone())
+                        .set_channel(payload.interaction.channel_id.clone())
+                        .set_code_path("core/src/scripts/slashs/xp.rs:guild_rank:301"),
+                    interaction: BroadcastInteraction::default()
+                        .set_name("guild_rank")
+                        .set_type(BroadcastInteractionType::SlashCommand),
+                    details: BroadcastDetails::default()
+                        .add("code", "13004")
+                        .add("reason", "Cannot acquire the rank of the user"),
+                    ctx.skynet.as_ref()
+                );
                 return internal_error_deferred(ctx, &payload.interaction, guild_data.lang, "13004").await;
             }
         };
@@ -189,10 +324,38 @@ pub(crate) mod guild_rank {
                     Ok(Ok(g)) => g.name.clone(),
                     Ok(Err(e)) => {
                         error!(target: "Runtime", "An error occured because of fetching the Guild for the guild_rank command: {e:#?}");
+
+                        broadcast_error!(
+                            localisation: BroadcastLocalisation::default()
+                                .set_guild(payload.interaction.guild_id.clone())
+                                .set_channel(payload.interaction.channel_id.clone())
+                                .set_code_path("core/src/scripts/slashs/xp.rs:guild_rank:332"),
+                            interaction: BroadcastInteraction::default()
+                                .set_name("guild_rank")
+                                .set_type(BroadcastInteractionType::SlashCommand),
+                            details: BroadcastDetails::default()
+                                .add("code", "13005")
+                                .add("reason", "Cannot acquire the guild data"),
+                            ctx.skynet.as_ref()
+                        );
                         return internal_error_deferred(ctx, &payload.interaction, guild_data.lang, "13005").await;
                     }
                     Err(e) => {
                         error!(target: "Runtime", "An error occured while trying to fetch the Guild for the guild_rank command: {e:#?}");
+
+                        broadcast_error!(
+                            localisation: BroadcastLocalisation::default()
+                                .set_guild(payload.interaction.guild_id.clone())
+                                .set_channel(payload.interaction.channel_id.clone())
+                                .set_code_path("core/src/scripts/slashs/xp.rs:guild_rank:350"),
+                            interaction: BroadcastInteraction::default()
+                                .set_name("guild_rank")
+                                .set_type(BroadcastInteractionType::SlashCommand),
+                            details: BroadcastDetails::default()
+                                .add("code", "13006")
+                                .add("reason", "Cannot acquire the guild data"),
+                            ctx.skynet.as_ref()
+                        );
                         return internal_error_deferred(ctx, &payload.interaction, guild_data.lang, "13006").await;
                     }
                 }
@@ -206,11 +369,39 @@ pub(crate) mod guild_rank {
                 Ok(bytes) => bytes,
                 Err(e) => {
                     error!(target: "Runtime", "An error occured while transforming the response into bytes: {e:#}");
+
+                    broadcast_error!(
+                        localisation: BroadcastLocalisation::default()
+                            .set_guild(payload.interaction.guild_id.clone())
+                            .set_channel(payload.interaction.channel_id.clone())
+                            .set_code_path("core/src/scripts/slashs/xp.rs:guild_rank:377"),
+                        interaction: BroadcastInteraction::default()
+                            .set_name("guild_rank")
+                            .set_type(BroadcastInteractionType::SlashCommand),
+                        details: BroadcastDetails::default()
+                            .add("code", "13007")
+                            .add("reason", "Cannot acquire the user's avatar"),
+                        ctx.skynet.as_ref()
+                    );
                     return internal_error_deferred(ctx, &payload.interaction, guild_data.lang, "13007").await
                 }
             },
             Err(e) => {
                 error!(target: "Runtime", "An error occured while fetching the user's avatar: {e:#}");
+
+                broadcast_error!(
+                    localisation: BroadcastLocalisation::default()
+                        .set_guild(payload.interaction.guild_id.clone())
+                        .set_channel(payload.interaction.channel_id.clone())
+                        .set_code_path("core/src/scripts/slashs/xp.rs:guild_rank:396"),
+                    interaction: BroadcastInteraction::default()
+                        .set_name("guild_rank")
+                        .set_type(BroadcastInteractionType::SlashCommand),
+                    details: BroadcastDetails::default()
+                        .add("code", "13008")
+                        .add("reason", "Cannot acquire the user's avatar"),
+                    ctx.skynet.as_ref()
+                );
                 return internal_error_deferred(ctx, &payload.interaction, guild_data.lang, "13008").await
             }
         };
@@ -250,19 +441,29 @@ pub(crate) mod guild_rank {
                         id: 0
                     });
 
-                let m = payload.interaction.update_with_files(
+                let _ = payload.interaction.update_with_files(
                     &ctx.skynet,
                     msg,
                     vec![file]
                 ).await;
-
-                if let Err(e) = m {
-                    dbg!(&e);
-                }
             },
             Err(e) => {
                 error!(target: "Runtime", "An error occured while generating the guild xp card: {e:#?}");
                 internal_error_deferred(ctx, &payload.interaction, guild_data.lang, "13009").await;
+
+                broadcast_error!(
+                    localisation: BroadcastLocalisation::default()
+                        .set_guild(payload.interaction.guild_id.clone())
+                        .set_channel(payload.interaction.channel_id.clone())
+                        .set_code_path("core/src/scripts/slashs/xp.rs:guild_rank:458"),
+                    interaction: BroadcastInteraction::default()
+                        .set_name("guild_rank")
+                        .set_type(BroadcastInteractionType::SlashCommand),
+                    details: BroadcastDetails::default()
+                        .add("code", "13009")
+                        .add("reason", "Cannot generate the guild xp card"),
+                    ctx.skynet.as_ref()
+                );
             }
         }
     }

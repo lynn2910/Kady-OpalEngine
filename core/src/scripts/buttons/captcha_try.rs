@@ -11,6 +11,8 @@ use client::models::Snowflake;
 use database::Database;
 use features::captcha;
 use translation::{ message, fmt::formatter::Formatter };
+use crate::broadcast_error;
+use crate::crates::error_broadcaster::*;
 use crate::scripts::{get_guild_locale, QueryParams};
 
 pub(in crate::scripts) async fn triggered(ctx: &Context, payload: &InteractionCreate, query: QueryParams) {
@@ -37,6 +39,21 @@ pub(in crate::scripts) async fn triggered(ctx: &Context, payload: &InteractionCr
                     )
                     .set_ephemeral(true)
             ).await;
+
+            broadcast_error!(
+                localisation: BroadcastLocalisation::default()
+                    .set_guild(Some(guild_id))
+                    .set_channel(payload.interaction.channel_id.clone())
+                    .set_code_path("core/src/scripts/buttons/captcha_try.rs:triggered:47"),
+                interaction: BroadcastInteraction::default()
+                    .set_name("captcha_try")
+                    .set_type(BroadcastInteractionType::Button),
+                details: BroadcastDetails::default()
+                    .add("code", "11001")
+                    .add("error", "Cannot get the 'code' query parameter"),
+                ctx.skynet.as_ref()
+            );
+
             return;
         }
     };
@@ -55,6 +72,21 @@ pub(in crate::scripts) async fn triggered(ctx: &Context, payload: &InteractionCr
                     )
                     .set_ephemeral(true)
             ).await;
+
+            broadcast_error!(
+                localisation: BroadcastLocalisation::default()
+                    .set_guild(Some(guild_id))
+                    .set_channel(payload.interaction.channel_id.clone())
+                    .set_code_path("core/src/scripts/buttons/captcha_try.rs:triggered:80"),
+                interaction: BroadcastInteraction::default()
+                    .set_name("captcha_try")
+                    .set_type(BroadcastInteractionType::Button),
+                details: BroadcastDetails::default()
+                    .add("code", "11002")
+                    .add("error", "Cannot get the 'instance' query parameter"),
+                ctx.skynet.as_ref()
+            );
+
             return;
         }
     };
@@ -68,6 +100,20 @@ pub(in crate::scripts) async fn triggered(ctx: &Context, payload: &InteractionCr
             Err(e) => {
                 error!("Error while fetching guild data: {:?}", e);
                 cannot_get_guild_data(ctx, payload).await;
+
+                broadcast_error!(
+                    localisation: BroadcastLocalisation::default()
+                        .set_guild(Some(guild_id))
+                        .set_channel(payload.interaction.channel_id.clone())
+                        .set_code_path("core/src/scripts/buttons/captcha_try.rs:triggered:108"),
+                    interaction: BroadcastInteraction::default()
+                        .set_name("captcha_try")
+                        .set_type(BroadcastInteractionType::Button),
+                    details: BroadcastDetails::default()
+                        .add("error", "Cannot get the guild data"),
+                    ctx.skynet.as_ref()
+                );
+
                 return;
             }
         }
@@ -107,6 +153,21 @@ pub(in crate::scripts) async fn triggered(ctx: &Context, payload: &InteractionCr
                     )
                     .set_ephemeral(true)
             ).await;
+
+            broadcast_error!(
+                localisation: BroadcastLocalisation::default()
+                    .set_guild(Some(guild_id))
+                    .set_channel(payload.interaction.channel_id.clone())
+                    .set_code_path("core/src/scripts/buttons/captcha_try.rs:triggered:155"),
+                interaction: BroadcastInteraction::default()
+                    .set_name("captcha_try")
+                    .set_type(BroadcastInteractionType::Button),
+                details: BroadcastDetails::default()
+                    .add("code", "11003")
+                    .add("error", "Cannot get the captcha container"),
+                ctx.skynet.as_ref()
+            );
+
             return;
         }
     };
@@ -149,7 +210,7 @@ pub(in crate::scripts) async fn triggered(ctx: &Context, payload: &InteractionCr
                             .set_content(
                                 message!(
                                     guild_data.lang.clone(),
-                                    "errors::cannot_.remove_role",
+                                    "errors::cannot_remove_role",
                                     Formatter::new().add("id", guild_member.user.as_ref().unwrap().id.to_string())
                                 )
                             );

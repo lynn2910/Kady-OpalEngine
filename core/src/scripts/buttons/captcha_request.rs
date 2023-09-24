@@ -11,6 +11,8 @@ use database::{Database, model};
 use features::captcha;
 use translation::fmt::formatter::Formatter;
 use translation::message;
+use crate::crates::error_broadcaster::*;
+use crate::broadcast_error;
 use crate::scripts::{get_guild_locale, QueryParams};
 
 pub(in crate::scripts) async fn triggered(ctx: &Context, payload: &InteractionCreate, _query: QueryParams) {
@@ -35,6 +37,20 @@ pub(in crate::scripts) async fn triggered(ctx: &Context, payload: &InteractionCr
                         .set_ephemeral(true)
                 ).await;
 
+                broadcast_error!(
+                    localisation: BroadcastLocalisation::default()
+                        .set_guild(Some(guild_id))
+                        .set_channel(payload.interaction.channel_id.clone())
+                        .set_user(payload.interaction.user.clone())
+                        .set_code_path("core::scripts::button::captcha_request.rs:45"),
+                    interaction: BroadcastInteraction::default()
+                        .set_type(BroadcastInteractionType::Button)
+                        .set_name("captcha_request"),
+                    details: BroadcastDetails::default()
+                        .add("reason", "Cannot get user id after un-packaging &User from &GuildMember"),
+                    ctx.skynet.as_ref()
+                );
+
                 return
             }
         },
@@ -50,6 +66,20 @@ pub(in crate::scripts) async fn triggered(ctx: &Context, payload: &InteractionCr
                     )
                     .set_ephemeral(true)
             ).await;
+
+            broadcast_error!(
+                localisation: BroadcastLocalisation::default()
+                    .set_guild(Some(guild_id))
+                    .set_channel(payload.interaction.channel_id.clone())
+                    .set_user(payload.interaction.user.clone())
+                    .set_code_path("core::scripts::button::captcha_request.rs:75"),
+                interaction: BroadcastInteraction::default()
+                    .set_type(BroadcastInteractionType::Button)
+                    .set_name("captcha_request"),
+                details: BroadcastDetails::default()
+                    .add("reason", "Cannot get user id from the payload"),
+                ctx.skynet.as_ref()
+            );
 
             return
         }
@@ -75,6 +105,21 @@ pub(in crate::scripts) async fn triggered(ctx: &Context, payload: &InteractionCr
                         )
                         .set_ephemeral(true)
                 ).await;
+
+                broadcast_error!(
+                    localisation: BroadcastLocalisation::default()
+                        .set_guild(Some(guild_id))
+                        .set_channel(payload.interaction.channel_id.clone())
+                        .set_user(payload.interaction.user.clone())
+                        .set_code_path("core::scripts::button::captcha_request.rs:114"),
+                    interaction: BroadcastInteraction::default()
+                        .set_type(BroadcastInteractionType::Button)
+                        .set_name("captcha_request"),
+                    details: BroadcastDetails::default()
+                        .add("reason", "the structure features::captcha::CaptchaContainer is not present in the context data"),
+                    ctx.skynet.as_ref()
+                );
+
                 return;
             }
         };
@@ -95,6 +140,22 @@ pub(in crate::scripts) async fn triggered(ctx: &Context, payload: &InteractionCr
             Err(e) => {
                 error!("Error while fetching guild data: {:?}", e);
                 cannot_get_guild_data(ctx, payload).await;
+
+                broadcast_error!(
+                    localisation: BroadcastLocalisation::default()
+                        .set_guild(Some(guild_id))
+                        .set_channel(payload.interaction.channel_id.clone())
+                        .set_user(payload.interaction.user.clone())
+                        .set_code_path("core::scripts::button::captcha_request.rs:149"),
+                    interaction: BroadcastInteraction::default()
+                        .set_type(BroadcastInteractionType::Button)
+                        .set_name("captcha_request"),
+                    details: BroadcastDetails::default()
+                        .add("reason", "Cannot get guild data from the database")
+                        .add("error", format!("{e:#?}")),
+                    ctx.skynet.as_ref()
+                );
+
                 return;
             }
         }
@@ -142,6 +203,22 @@ pub(in crate::scripts) async fn triggered(ctx: &Context, payload: &InteractionCr
         match msg {
             Err(e) => {
                 error!(target: "Runtime", "An error occured in a captcha response: {e:#?}");
+
+                broadcast_error!(
+                    localisation: BroadcastLocalisation::default()
+                        .set_guild(Some(guild_id))
+                        .set_channel(payload.interaction.channel_id.clone())
+                        .set_user(payload.interaction.user.clone())
+                        .set_code_path("core::scripts::button::captcha_request.rs:212"),
+                    interaction: BroadcastInteraction::default()
+                        .set_type(BroadcastInteractionType::Button)
+                        .set_name("captcha_request"),
+                    details: BroadcastDetails::default()
+                        .add("reason", "Cannot defer the interaction")
+                        .add("error", format!("{e:#?}")),
+                    ctx.skynet.as_ref()
+                );
+
                 return;
             },
             Ok(Err(e)) => {
@@ -189,6 +266,21 @@ pub(in crate::scripts) async fn triggered(ctx: &Context, payload: &InteractionCr
                         )
                         .set_ephemeral(true)
                 ).await;
+
+                broadcast_error!(
+                    localisation: BroadcastLocalisation::default()
+                        .set_guild(Some(guild_id))
+                        .set_channel(payload.interaction.channel_id.clone())
+                        .set_user(payload.interaction.user.clone())
+                        .set_code_path("core::scripts::button::captcha_request.rs:275"),
+                    interaction: BroadcastInteraction::default()
+                        .set_type(BroadcastInteractionType::Button)
+                        .set_name("captcha_request"),
+                    details: BroadcastDetails::default()
+                        .add("reason", "the structure features::captcha::CaptchaContainer is not present in the context data"),
+                    ctx.skynet.as_ref()
+                );
+
                 return;
             }
         };
@@ -274,6 +366,21 @@ pub(in crate::scripts) async fn triggered(ctx: &Context, payload: &InteractionCr
                     )
                     .set_ephemeral(true)
             ).await;
+
+            broadcast_error!(
+                localisation: BroadcastLocalisation::default()
+                    .set_guild(Some(guild_id))
+                    .set_channel(payload.interaction.channel_id.clone())
+                    .set_user(payload.interaction.user.clone())
+                    .set_code_path("core::scripts::button::captcha_request.rs:357"),
+                interaction: BroadcastInteraction::default()
+                    .set_type(BroadcastInteractionType::Button)
+                    .set_name("captcha_request"),
+                details: BroadcastDetails::default()
+                    .add("reason", "Cannot send the captcha message")
+                    .add("error", format!("{e:#?}")),
+                ctx.skynet.as_ref()
+            );
         }
     }
 }
