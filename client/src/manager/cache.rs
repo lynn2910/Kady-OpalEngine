@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::hash::Hash;
 use serde::{Deserialize, Serialize};
 use tokio::time::Instant;
+use crate::constants::MAX_MESSAGE_CACHE_SIZE;
 use crate::models::channel::{Channel, ChannelId, Thread};
 use crate::models::guild::{Guild, GuildId, GuildMember, Role};
 use crate::models::message::Message;
@@ -92,15 +93,15 @@ impl CacheManager {
         // Delete all channels :)
         self.channels.retain(|_, c| {
             match &c {
-                Channel::GuildText(c) => c.guild_id == id,
-                Channel::GuildForum(c) => c.guild_id == id,
-                Channel::GuildAnnouncement(c) => c.guild_id == id,
-                Channel::GuildCategory(c) => c.guild_id == id,
-                Channel::GuildVoice(c) => c.guild_id == id,
+                Channel::GuildText(c) => c.guild_id.as_ref() == Some(&id),
+                Channel::GuildForum(c) => c.guild_id.as_ref() == Some(&id),
+                Channel::GuildAnnouncement(c) => c.guild_id.as_ref() == Some(&id),
+                Channel::GuildCategory(c) => c.guild_id.as_ref() == Some(&id),
+                Channel::GuildVoice(c) => c.guild_id.as_ref() == Some(&id),
                 Channel::Thread(c) => match c {
-                    Thread::AnnouncementThread(t) => t.guild_id == id,
-                    Thread::PrivateThread(t) => t.guild_id == id,
-                    Thread::PublicThread(t) => t.guild_id == id,
+                    Thread::AnnouncementThread(t) => t.guild_id.as_ref() == Some(&id),
+                    Thread::PrivateThread(t) => t.guild_id.as_ref() == Some(&id),
+                    Thread::PublicThread(t) => t.guild_id.as_ref() == Some(&id),
                 }
                 _ => false
             }
@@ -293,10 +294,14 @@ impl CacheManager {
     /// Add or update a guild role in the cache.
     pub fn update_guild_role(&mut self, guild_id: &GuildId, role: Role) {
         if let Some(guild) = self.guilds.get_mut(guild_id) {
-            if let Some(cache_role) = guild.roles.get_mut(&role.id) {
-                cache_role.update(&role)
+            // find the role in the guild, but the role list is a vec, so we need to find it
+            // by its id
+            let in_cache_role = guild.roles.iter_mut().find(|r| r.id == role.id);
+
+            if let Some(r) = in_cache_role {
+                r.update(&role)
             } else {
-                guild.roles.insert(role.id.clone(), role.clone());
+                guild.roles.push(role.clone());
             }
         }
     }
@@ -305,10 +310,14 @@ impl CacheManager {
     pub fn update_guild_roles(&mut self, guild_id: &GuildId, roles: Vec<Role>) {
         if let Some(guild) = self.guilds.get_mut(guild_id) {
             for role in roles {
-                if let Some(cache_role) = guild.roles.get_mut(&role.id) {
-                    cache_role.update(&role)
+                // find the role in the guild, but the role list is a vec, so we need to find it
+                // by its id
+                let in_cache_role = guild.roles.iter_mut().find(|r| r.id == role.id);
+
+                if let Some(r) = in_cache_role {
+                    r.update(&role)
                 } else {
-                    guild.roles.insert(role.id.clone(), role.clone());
+                    guild.roles.push(role.clone());
                 }
             }
         }
@@ -317,7 +326,7 @@ impl CacheManager {
     /// Get a guild role by its id.
     pub fn get_guild_role(&self, guild_id: &GuildId, role_id: &Snowflake) -> Option<&Role> {
         if let Some(guild) = self.guilds.get(guild_id) {
-            guild.roles.get(role_id)
+            guild.roles.iter().find(|r| r.id == *role_id)
         } else {
             None
         }
@@ -347,6 +356,10 @@ impl CacheManager {
 pub struct CacheDock<I: Hash + Eq + PartialEq + Clone, T: Clone> {
     items: HashMap<I, CacheItem<T>>,
     max_size: usize
+}
+
+pub(crate) fn default_cache_dock<I: Hash + Eq + PartialEq + Clone, T: Clone>() -> CacheDock<I, T> {
+    CacheDock::new(MAX_MESSAGE_CACHE_SIZE)
 }
 
 impl<I: Hash + Eq + PartialEq + Clone, T: Clone> CacheDock<I, T> {

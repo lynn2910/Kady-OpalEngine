@@ -42,6 +42,7 @@ impl BroadcastInteraction {
 
 /// Defines the type of interaction
 #[derive(Debug, Serialize)]
+#[allow(unused)]
 pub enum BroadcastInteractionType {
     SlashCommand,
     Button,

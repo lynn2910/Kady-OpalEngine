@@ -6,6 +6,8 @@ use futures_util::StreamExt;
 use log::{error, warn};
 use reqwest::{header, multipart, RequestBuilder, StatusCode};
 use reqwest::header::{CONTENT_LENGTH, HeaderMap, HeaderValue};
+use serde::{Deserialize, Serialize};
+use serde::de::DeserializeOwned;
 use serde_json::{json, Value};
 use tokio::sync::{Mutex, RwLock};
 use tokio::task::JoinHandle;
@@ -21,21 +23,6 @@ use crate::models::message::{AttachmentBuilder, Message, MessageBuilder};
 use crate::models::Snowflake;
 
 
-
-
-
-/// This trait is used to convert a views json value into a struct.
-pub trait HttpRessource: Sized + Send + Sync {
-    /// Convert the views json value into a struct.
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self>;
-}
-
-impl HttpRessource for () {
-    fn from_raw(_: Value, _: Option<u64>) -> Result<Self> {
-        Ok(())
-    }
-}
-
 /// This type represent the API response, if this an Err(_), well, the api wasn't happy
 pub type ApiResult<T> = core::result::Result<T, DiscordApiError>;
 
@@ -43,16 +30,18 @@ pub type ApiResult<T> = core::result::Result<T, DiscordApiError>;
 ///
 /// The trick is that we return a Result, where, if this an error, this is normal.
 /// But if this is a success, we have a second Result which can be `Ok(T)` or `Err(DiscordError)`.
-fn convert_value<T: HttpRessource>(value: Value, shard: Option<u64>) -> Result<ApiResult<T>> {
+fn convert_value<T: DeserializeOwned>(mut value: Value, shard: Option<u64>) -> Result<ApiResult<T>> {
+    if let Some(s) = shard { value["shard"] = s.into(); }
+
     if is_api_error(&value) {
-        match DiscordApiError::from_raw(value, shard) {
+        match DiscordApiError::deserialize(value) {
             Ok(err) => Ok(Err(err)),
-            Err(err) => Err(err)
+            Err(err) => Err(err.into())
         }
     } else {
-        match T::from_raw(value, shard) {
-            Ok(value) => Ok(Ok(value)),
-            Err(err) => Err(err)
+        match serde_path_to_error::deserialize(value) {
+            Ok(v) => Ok(Ok(v)),
+            Err(err) => Err(error::Error::Api(ApiError::Deserialize(err.to_string())))
         }
     }
 }
@@ -71,29 +60,21 @@ fn is_api_error(raw: &Value) -> bool {
 ///
 /// Reference:
 /// - [Discord API Errors](https://discord.com/developers/docs/topics/opcodes-and-status-codes#json-json-error-codes)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DiscordError {
     Unknown = -1,
-}
-
-impl HttpRessource for DiscordError {
-    fn from_raw(raw: Value, _shard: Option<u64>) -> Result<Self> {
-        match raw.as_i64() {
-            Some(_) => Ok(Self::Unknown),
-            None => Err(Error::Api(ApiError::RequestStatus("Failed to convert `code` field to i64".into())))
-        }
-    }
 }
 
 /// Represents an error returned by the Discord API.
 ///
 /// Reference:
 /// - [Discord API Errors](https://discord.com/developers/docs/reference#error-messages)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DiscordApiError {
-    pub code: DiscordError,
+    pub code: u64,
     pub message: String,
-    pub source: Value
+    #[serde(default)]
+    pub errors: Option<Value>,
 }
 
 impl Display for DiscordApiError {
@@ -104,24 +85,15 @@ impl Display for DiscordApiError {
 
 impl std::error::Error for DiscordApiError {}
 
-impl HttpRessource for DiscordApiError {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let code = DiscordError::from_raw(raw["code"].clone(), shard)?;
-
-        let message = match raw["message"].as_str() {
-            Some(message) => message,
-            None => { return Err(Error::Api(ApiError::RequestStatus("Failed to convert `message` field to string".into()))) }
-        };
-
-        Ok(Self {
-            code,
-            message: message.to_string(),
-            source: raw
-        })
+impl From<serde_json::error::Error> for DiscordApiError {
+    fn from(err: serde_json::error::Error) -> Self {
+        Self {
+            code: 0,
+            message: format!("Failed to parse json: {}", err),
+            errors: Some(Value::Null)
+        }
     }
 }
-
-
 
 #[derive(Clone)]
 pub struct HttpConfiguration {
@@ -889,9 +861,9 @@ impl Http {
                 if value.is_null() {
                     Ok(Ok(()))
                 } else {
-                    match DiscordApiError::from_raw(value, None) {
+                    match DiscordApiError::deserialize(value) {
                         Ok(err) => Ok(Err(err)),
-                        Err(err) => Err(err)
+                        Err(err) => Err(err.into())
                     }
                 }
             },
@@ -967,7 +939,7 @@ impl Http {
     ///
     /// Reference:
     /// - [Create Global Application Command](https://discord.com/developers/docs/interactions/application-commands#create-global-application-command)
-    pub async fn create_global_application_command(&self, application_id: &Snowflake, payload: ApplicationCommand) -> Result<ApiResult<ApplicationCommand>> {
+    pub async fn create_global_application_command(&self, application_id: &Snowflake, payload: &ApplicationCommand) -> Result<ApiResult<ApplicationCommand>> {
         let (tx, rx) = futures_channel::mpsc::unbounded();
 
         let request = Request {
@@ -994,7 +966,7 @@ impl Http {
     ///
     /// Reference:
     /// - [Create Guild Application Command](https://discord.com/developers/docs/interactions/application-commands#create-guild-application-command)
-    pub async fn create_guild_application_command(&self, application_id: &Snowflake, guild_id: &GuildId, payload: ApplicationCommand) -> Result<ApiResult<ApplicationCommand>> {
+    pub async fn create_guild_application_command(&self, application_id: &Snowflake, guild_id: &GuildId, payload: &ApplicationCommand) -> Result<ApiResult<ApplicationCommand>> {
         let (tx, rx) = futures_channel::mpsc::unbounded();
 
         let request = Request {

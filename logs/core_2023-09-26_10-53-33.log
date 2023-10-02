@@ -1,0 +1,4 @@
+[2023-09-26 10:53:33.824264 +02:00] INFO [client] client\src\lib.rs:325: Event handler registered
+[2023-09-26 10:53:34.593377 +02:00] INFO [core] core\src\main.rs:254: Client started
+[2023-09-26 10:53:34.900332 +02:00] INFO [core] core\src\main.rs:39: Shard 0 ready
+[2023-09-26 10:53:34.900421 +02:00] INFO [core] core\src\main.rs:46: Connected as Luna Beta

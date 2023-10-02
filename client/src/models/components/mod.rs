@@ -4,8 +4,6 @@ pub mod message_components;
 
 use serde::{ Serialize, Deserialize };
 use serde_json::{json, Value};
-use error::{Error, ModelError, Result};
-use crate::manager::http::HttpRessource;
 use crate::models::Snowflake;
 use crate::models::user::User;
 
@@ -13,21 +11,14 @@ use crate::models::user::User;
 pub struct Color(pub u64);
 
 impl Color {
+    pub const EMBED_COLOR: Self = Self(2829617);
+
     pub fn from_hex(hex: impl Into<String>) -> Self {
         Self(u64::from_str_radix(&hex.into().replace('#', ""), 16).unwrap_or(0))
     }
 
     pub fn from_rgb(r: u8, g: u8, b: u8) -> Self {
         Self((r as u64) << 16 | (g as u64) << 8 | b as u64)
-    }
-}
-
-impl HttpRessource for Color {
-    fn from_raw(raw: Value, _: Option<u64>) -> Result<Self> {
-        match raw.as_u64() {
-            Some(color) => Ok(Self(color)),
-            None => Err(Error::Model(ModelError::InvalidPayload("Failed to parse color".into())))
-        }
     }
 }
 
@@ -55,38 +46,6 @@ pub struct Emoji {
     pub available: Option<bool>,
 }
 
-impl HttpRessource for Emoji {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let id = Snowflake::from_raw(raw["id"].clone(), shard)?;
-        let name = if let Some(name) = raw["name"].as_str() { name.to_string() } else { return Err(Error::Model(ModelError::InvalidPayload("Failed to parse emoji name".into()))) };
-        let roles = if let Some(roles) = raw["roles"].as_array() {
-                roles.iter().map(|role| Snowflake::from_raw(role.clone(), shard)).collect::<Result<Vec<Snowflake>>>()?
-            } else {
-                return Err(Error::Model(ModelError::InvalidPayload("Failed to parse emoji roles".into())))
-            };
-        let user = if let Some(users) = raw.get("users") {
-                Some(User::from_raw(users.clone(), shard)?)
-            } else {
-                None
-            };
-        let require_colons = raw["require_colons"].as_bool();
-        let managed = raw["managed"].as_bool();
-        let animated = raw["animated"].as_bool();
-        let available = raw["available"].as_bool();
-
-        Ok(Self {
-            id: Some(id),
-            name,
-            roles,
-            user,
-            require_colons,
-            managed,
-            animated,
-            available,
-        })
-    }
-}
-
 impl Emoji {
     pub fn to_json(&self) -> Value {
         json!({
@@ -105,6 +64,40 @@ impl Emoji {
             managed: None,
             animated: None,
             available: None,
+        }
+    }
+}
+pub(crate) mod timestamp_serde {
+    use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
+    use chrono::{DateTime, TimeZone, Utc};
+
+    pub fn serialize<S>(
+        timestamp: &Option<DateTime<Utc>>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+    {
+        match *timestamp {
+            Some(time) => time.timestamp().serialize(serializer),
+            None => serializer.serialize_none(),
+        }
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<DateTime<Utc>>, D::Error>
+        where
+            D: Deserializer<'de>,
+    {
+        let timestamp: Option<i64> = Deserialize::deserialize(deserializer)?;
+
+        match timestamp {
+            Some(ts) => {
+                match Utc.timestamp_millis_opt(ts) {
+                    chrono::LocalResult::Single(datetime) => Ok(Some(datetime)),
+                    _ => Err(serde::de::Error::custom("invalid timestamp")),
+                }
+            }
+            None => Ok(None),
         }
     }
 }

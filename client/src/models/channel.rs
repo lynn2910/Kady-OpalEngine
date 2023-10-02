@@ -1,14 +1,13 @@
 #![allow(dead_code)]
 
 use std::fmt::{Display, Formatter};
-use chrono::{TimeZone, Utc};
-use serde::{ Serialize, Deserialize };
+use chrono::Utc;
+use serde::{Serialize, Deserialize, Deserializer};
+use serde::de::Error;
 use serde_json::Value;
-use error::{ModelError, Result};
-use error::Error::Model;
-use crate::constants::MAX_MESSAGE_CACHE_SIZE;
+use error::Result;
 use crate::manager::cache::{CacheDock, UpdateCache};
-use crate::manager::http::{ApiResult, Http, HttpRessource};
+use crate::manager::http::{ApiResult, Http};
 use crate::models::guild::GuildId;
 use crate::models::message::{Message, MessageBuilder};
 use crate::models::Snowflake;
@@ -51,13 +50,8 @@ impl From<&str> for ChannelId {
     }
 }
 
-impl HttpRessource for ChannelId {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        Ok(Self(Snowflake::from_raw(raw, shard)?))
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
+#[serde(untagged)]
 pub enum Channel {
     Unknown(UnknownChannel),
     GuildText(GuildTextChannel),
@@ -122,27 +116,8 @@ impl UpdateCache for Channel {
     }
 }
 
-impl HttpRessource for Channel {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let kind = ChannelKind::from_raw(raw["type"].to_owned(), shard)?;
-
-        match kind {
-            ChannelKind::GuildText => Ok(Self::GuildText(GuildTextChannel::from_raw(raw, shard)?)),
-            ChannelKind::Dm => Ok(Self::Dm(Dm::from_raw(raw, shard)?)),
-            ChannelKind::GuildVoice => Ok(Self::GuildVoice(GuildVoice::from_raw(raw, shard)?)),
-            ChannelKind::GuildCategory => Ok(Self::GuildCategory(GuildCategory::from_raw(raw, shard)?)),
-            ChannelKind::GuildAnnouncement => Ok(Self::GuildAnnouncement(GuildAnnouncement::from_raw(raw, shard)?)),
-            ChannelKind::GuildStageVoice => Ok(Self::GuildStageVoice(GuildStageVoice::from_raw(raw, shard)?)),
-            ChannelKind::GuildForum => Ok(Self::GuildForum(GuildForum::from_raw(raw, shard)?)),
-            ChannelKind::PublicThread => Ok(Self::Thread(Thread::PublicThread(PublicThread::from_raw(raw, shard)?))),
-            ChannelKind::PrivateThread => Ok(Self::Thread(Thread::PrivateThread(PrivateThread::from_raw(raw, shard)?))),
-            ChannelKind::AnnouncementThread => Ok(Self::Thread(Thread::PublicThread(PublicThread::from_raw(raw, shard)?))),
-            ChannelKind::GuildDirectory | ChannelKind::GroupDm => Ok(Self::Unknown(UnknownChannel::from_raw(raw, shard)?)),
-        }
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
+#[serde(untagged)]
 pub enum Thread {
     PublicThread(PublicThread),
     PrivateThread(PrivateThread),
@@ -176,6 +151,7 @@ impl UpdateCache for Thread {
 pub struct UnknownChannel {
     pub id: ChannelId,
     pub name: String,
+    #[serde(rename = "type")]
     pub kind: ChannelKind,
     pub guild_id: Option<GuildId>,
 }
@@ -197,22 +173,6 @@ impl UpdateCache for UnknownChannel {
     }
 }
 
-impl HttpRessource for UnknownChannel {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let id = ChannelId::from_raw(raw["id"].to_owned(), shard)?;
-        let name = raw["name"].as_str().map(|s| s.to_string()).unwrap_or_else(|| "Unknown".to_string());
-        let kind = ChannelKind::from_raw(raw["type"].to_owned(), shard)?;
-        let guild_id = raw["guild_id"].as_str().map(|s| GuildId(s.to_string().into()));
-
-        Ok(Self {
-            id,
-            name,
-            kind,
-            guild_id,
-        })
-    }
-}
-
 /// Represents a guild text channel.
 ///
 /// Reference:
@@ -220,23 +180,27 @@ impl HttpRessource for UnknownChannel {
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct GuildTextChannel {
     pub id: ChannelId,
+    #[serde(rename = "type")]
+    pub kind: ChannelKind,
     pub name: Option<String>,
-    pub icon: Option<String>,
-    pub guild_id: GuildId,
+    pub guild_id: Option<GuildId>,
     pub position: Option<u64>,
     pub permission_overwrites: Option<Vec<PermissionOverwrite>>,
     pub topic: Option<String>,
     pub nsfw: Option<bool>,
     /// The id of the last message sent in this channel (may not point to an existing or valid message)
-    pub last_message_id: Option<String>,
+    pub last_message_id: Option<Snowflake>,
     /// Amount of seconds a user has to wait before sending another message (0-21600)
     pub rate_limit_per_user: Option<u64>,
     pub parent_id: Option<ChannelId>,
+    
     pub last_pin_timestamp: Option<chrono::DateTime<Utc>>,
     /// Contain the permissions for the user in the channel, including overwrites, only when part of the interaction object
     pub permissions: Option<String>,
     pub flags: Option<u64>,
 
+
+    #[serde(default = "crate::manager::cache::default_cache_dock")]
     pub messages: CacheDock<Snowflake, Message>
 }
 
@@ -247,9 +211,6 @@ impl UpdateCache for GuildTextChannel {
         }
         if self.name != from.name {
             self.name = from.name.clone();
-        }
-        if self.icon != from.icon {
-            self.icon = from.icon.clone();
         }
         if self.guild_id != from.guild_id {
             self.guild_id = from.guild_id.clone();
@@ -287,59 +248,6 @@ impl UpdateCache for GuildTextChannel {
     }
 }
 
-impl HttpRessource for GuildTextChannel {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let id = ChannelId::from_raw(raw["id"].to_owned(), shard)?;
-        let name = raw["name"].as_str().map(|s| s.to_string());
-        let icon = raw["icon"].as_str().map(|s| s.to_string());
-        let guild_id = GuildId::from_raw(raw["guild_id"].to_owned(), shard)?;
-        let position = raw["position"].as_u64();
-        let permission_overwrites = raw["permission_overwrites"].as_array().map(|a| {
-            a.iter().map(|v| PermissionOverwrite::from_raw(v.to_owned(), shard)).collect::<Result<Vec<_>>>()
-        }).transpose()?;
-        let topic = raw["topic"].as_str().map(|s| s.to_string());
-        let nsfw = raw["nsfw"].as_bool();
-        let last_message_id = raw["last_message_id"].as_str().map(|s| s.to_string());
-        let rate_limit_per_user = raw["rate_limit_per_user"].as_u64();
-
-        let parent_id = if let Some(s) = raw.get("parent_id") {
-            Some(ChannelId::from_raw(s.to_owned(), shard)?)
-        } else {
-            None
-        };
-
-        let last_pin_timestamp = if let Some(ts) = raw["last_pin_timestamp"].as_u64() {
-            match Utc.timestamp_millis_opt(ts as i64) {
-                chrono::LocalResult::Single(t) => Some(t.with_timezone(&Utc)),
-                _ => return Err(Model(ModelError::InvalidTimestamp(format!("Invalid timestamp: {}", ts))))
-            }
-        } else {
-            None
-        };
-
-        let permissions = raw["permissions"].as_str().map(|s| s.to_string());
-        let flags = raw["flags"].as_u64();
-
-        Ok(Self {
-            id,
-            name,
-            icon,
-            guild_id,
-            position,
-            permission_overwrites,
-            topic,
-            nsfw,
-            last_message_id,
-            rate_limit_per_user,
-            parent_id,
-            last_pin_timestamp,
-            permissions,
-            flags,
-            messages: CacheDock::new(MAX_MESSAGE_CACHE_SIZE)
-        })
-    }
-}
-
 /// Represents a DM channel.
 ///
 /// Reference:
@@ -347,13 +255,16 @@ impl HttpRessource for GuildTextChannel {
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct Dm {
     pub id: ChannelId,
+    #[serde(rename = "type")]
     pub kind: ChannelKind,
     pub last_message_id: Option<String>,
     pub icon: Option<String>,
+    
     pub last_pin_timestamp: Option<chrono::DateTime<Utc>>,
     /// Contain the permissions for the user in the channel, including overwrites, only when part of the interaction object
     pub permissions: Option<String>,
 
+    #[serde(default = "crate::manager::cache::default_cache_dock")]
     pub messages: CacheDock<Snowflake, Message>
 }
 
@@ -380,34 +291,6 @@ impl UpdateCache for Dm {
     }
 }
 
-impl HttpRessource for Dm {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let id = ChannelId::from_raw(raw["id"].to_owned(), shard)?;
-        let kind = ChannelKind::from_raw(raw["type"].to_owned(), shard)?;
-        let last_message_id = raw["last_message_id"].as_str().map(|s| s.to_string());
-        let icon = raw["icon"].as_str().map(|s| s.to_string());
-        let last_pin_timestamp = if let Some(ts) = raw["last_pin_timestamp"].as_u64() {
-            match Utc.timestamp_millis_opt(ts as i64) {
-                chrono::LocalResult::Single(t) => Some(t.with_timezone(&Utc)),
-                _ => return Err(Model(ModelError::InvalidTimestamp(format!("Invalid timestamp: {}", ts))))
-            }
-        } else {
-            None
-        };
-        let permissions = raw["permissions"].as_str().map(|s| s.to_string());
-
-        Ok(Self {
-            id,
-            kind,
-            last_message_id,
-            icon,
-            last_pin_timestamp,
-            permissions,
-            messages: CacheDock::new(MAX_MESSAGE_CACHE_SIZE)
-        })
-    }
-}
-
 /// Represents a guild voice channel.
 ///
 /// Reference:
@@ -415,8 +298,10 @@ impl HttpRessource for Dm {
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct GuildVoice {
     pub id: ChannelId,
+    #[serde(rename = "type")]
+    pub kind: ChannelKind,
     pub name: Option<String>,
-    pub guild_id: GuildId,
+    pub guild_id: Option<GuildId>,
     pub position: Option<u64>,
     /// The permission overwrites for this voice channel
     pub permission_overwrites: Option<Vec<PermissionOverwrite>>,
@@ -471,40 +356,6 @@ impl UpdateCache for GuildVoice {
     }
 }
 
-impl HttpRessource for GuildVoice {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let id = ChannelId::from_raw(raw["id"].to_owned(), shard)?;
-        let name = raw["name"].as_str().map(|s| s.to_string());
-        let guild_id = GuildId::from_raw(raw["guild_id"].to_owned(), shard)?;
-        let position = raw["position"].as_u64();
-        let permission_overwrites = raw["permission_overwrites"].as_array().map(|a| {
-            a.iter().map(|v| PermissionOverwrite::from_raw(v.to_owned(), shard)).collect::<Result<Vec<_>>>()
-        }).transpose()?;
-        let bitrate = raw["bitrate"].as_u64();
-        let user_limit = raw["user_limit"].as_u64();
-        let parent_id = raw["parent_id"].as_str().map(|s| ChannelId(s.to_string().into()));
-        let rtc_region = raw["rtc_region"].as_str().map(|s| s.to_string());
-        let video_quality_mode = raw["video_quality_mode"].as_u64();
-        let permissions = raw["permissions"].as_str().map(|s| s.to_string());
-        let nsfw = raw["nsfw"].as_bool();
-
-        Ok(Self {
-            id,
-            name,
-            guild_id,
-            position,
-            permission_overwrites,
-            bitrate,
-            user_limit,
-            parent_id,
-            rtc_region,
-            video_quality_mode,
-            permissions,
-            nsfw
-        })
-    }
-}
-
 /// Represents a guild category channel.
 ///
 /// Reference:
@@ -512,8 +363,10 @@ impl HttpRessource for GuildVoice {
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct GuildCategory {
     pub id: ChannelId,
+    #[serde(rename = "type")]
+    pub kind: ChannelKind,
     pub name: Option<String>,
-    pub guild_id: GuildId,
+    pub guild_id: Option<GuildId>,
     pub position: Option<u64>,
     /// The permission overwrites for this category
     pub permission_overwrites: Option<Vec<PermissionOverwrite>>,
@@ -544,29 +397,6 @@ impl UpdateCache for GuildCategory {
     }
 }
 
-impl HttpRessource for GuildCategory {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let id = ChannelId::from_raw(raw["id"].to_owned(), shard)?;
-        let name = raw["name"].as_str().map(|s| s.to_string());
-        let guild_id = GuildId::from_raw(raw["guild_id"].to_owned(), shard)?;
-        let position = raw["position"].as_u64();
-        let permission_overwrites = raw["permission_overwrites"].as_array().map(|a| {
-            a.iter().map(|v| PermissionOverwrite::from_raw(v.to_owned(), shard)).collect::<Result<Vec<_>>>()
-        }).transpose()?;
-        let permissions = raw["permissions"].as_str().map(|s| s.to_string());
-
-        Ok(Self {
-            id,
-            name,
-            guild_id,
-            position,
-            permission_overwrites,
-            permissions
-        })
-    }
-}
-
-
 /// Represents a guild announcement channel.
 ///
 /// Reference:
@@ -574,8 +404,10 @@ impl HttpRessource for GuildCategory {
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct GuildAnnouncement {
     pub id: ChannelId,
+    #[serde(rename = "type")]
+    pub kind: ChannelKind,
     pub name: Option<String>,
-    pub guild_id: GuildId,
+    pub guild_id: Option<GuildId>,
     pub position: Option<u64>,
     /// The permission overwrites for this announcement channel
     pub permission_overwrites: Option<Vec<PermissionOverwrite>>,
@@ -585,10 +417,12 @@ pub struct GuildAnnouncement {
     /// Amount of seconds a user has to wait before sending another message (0-21600)
     pub rate_limit_per_user: Option<u64>,
     pub parent_id: Option<ChannelId>,
+    
     pub last_pin_timestamp: Option<chrono::DateTime<Utc>>,
     /// Contain the permissions for the user in the channel, including overwrites, only when part of the interaction object
     pub permissions: Option<String>,
 
+    #[serde(default = "crate::manager::cache::default_cache_dock")]
     pub messages: CacheDock<Snowflake, Message>
 }
 
@@ -630,45 +464,6 @@ impl UpdateCache for GuildAnnouncement {
     }
 }
 
-impl HttpRessource for GuildAnnouncement {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let id = ChannelId::from_raw(raw.get("id").ok_or(Model(ModelError::MissingField("id".into())))?.clone(), shard)?;
-        let name = raw.get("name").and_then(|x| x.as_str()).map(|x| x.to_string());
-        let guild_id = GuildId::from_raw(raw.get("guild_id").ok_or(Model(ModelError::MissingField("guild_id".into())))?.clone(), shard)?;
-        let position = raw.get("position").and_then(|x| x.as_u64());
-        let permission_overwrites = raw.get("permission_overwrites").and_then(|x| x.as_array()).map(|x| x.iter().map(|x| PermissionOverwrite::from_raw(x.clone(), shard)).collect::<Result<Vec<_>>>()).transpose()?;
-        let nsfw = raw.get("nsfw").and_then(|x| x.as_bool());
-        let last_message_id = raw.get("last_message_id").and_then(|x| x.as_str()).map(|x| x.to_string());
-        let rate_limit_per_user = raw.get("rate_limit_per_user").and_then(|x| x.as_u64());
-        let parent_id = raw.get("parent_id").map(|x| ChannelId::from_raw(x.clone(), shard)).transpose()?;
-        let last_pin_timestamp = if let Some(ts) = raw["last_pin_timestamp"].as_u64() {
-            match Utc.timestamp_millis_opt(ts as i64) {
-                chrono::LocalResult::Single(t) => Some(t.with_timezone(&Utc)),
-                _ => return Err(Model(ModelError::InvalidTimestamp(format!("Invalid timestamp: {}", ts))))
-            }
-        } else {
-            None
-        };
-        let permissions = raw.get("permissions").and_then(|x| x.as_str()).map(|x| x.to_string());
-
-        Ok(Self {
-            id,
-            name,
-            guild_id,
-            position,
-            permission_overwrites,
-            nsfw,
-            last_message_id,
-            rate_limit_per_user,
-            parent_id,
-            last_pin_timestamp,
-            permissions,
-            messages: CacheDock::new(MAX_MESSAGE_CACHE_SIZE)
-        })
-
-    }
-}
-
 /// Represents an announcement thread channel.
 ///
 /// Reference:
@@ -677,14 +472,17 @@ impl HttpRessource for GuildAnnouncement {
 pub struct AnnouncementThread {
     pub id: ChannelId,
     pub name: Option<String>,
-    pub guild_id: GuildId,
+    pub guild_id: Option<GuildId>,
     pub parent_id: Option<ChannelId>,
     pub creator_id: String,
+    #[serde(rename = "type")]
     pub kind: ChannelKind,
     pub last_message_id: Option<String>,
     pub locked: bool,
     pub auto_archive_duration: u64,
-    pub archive_timestamp: chrono::DateTime<Utc>,
+    
+    pub archive_timestamp: Option<chrono::DateTime<Utc>>,
+    
     pub locked_timestamp: Option<chrono::DateTime<Utc>>,
     pub message_count: u64,
     pub member_count: u64,
@@ -714,59 +512,6 @@ impl UpdateCache for AnnouncementThread {
     }
 }
 
-impl HttpRessource for AnnouncementThread {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let id = ChannelId::from_raw(raw.get("id").ok_or(Model(ModelError::MissingField("id".into())))?.clone(), shard)?;
-        let name = raw.get("name").and_then(|x| x.as_str()).map(|x| x.to_owned());
-        let guild_id = GuildId::from_raw(raw.get("guild_id").ok_or(Model(ModelError::MissingField("guild_id".into())))?.clone(), shard)?;
-        let parent_id = raw.get("parent_id").map(|x| ChannelId::from_raw(x.to_owned(), shard)).transpose()?;
-        let creator_id = raw.get("creator_id").ok_or(Model(ModelError::MissingField("creator_id".into())))?.as_str().ok_or(Model(ModelError::InvalidPayload("creator_id".into())))?.to_owned();
-        let kind = ChannelKind::from_raw(raw["type"].clone(), shard)?;
-        let last_message_id = raw.get("last_message_id").and_then(|x| x.as_str()).map(|x| x.to_owned());
-        let locked = raw.get("locked").ok_or(Model(ModelError::MissingField("locked".into())))?.as_bool().ok_or(Model(ModelError::InvalidPayload("locked".into())))?;
-        let auto_archive_duration = raw.get("auto_archive_duration").ok_or(Model(ModelError::MissingField("auto_archive_duration".into())))?.as_u64().ok_or(Model(ModelError::InvalidPayload("auto_archive_duration".into())))?;
-        let archive_timestamp = if let Some(ts) = raw["archive_timestamp"].as_u64() {
-            match Utc.timestamp_millis_opt(ts as i64) {
-                chrono::LocalResult::Single(t) => t.with_timezone(&Utc),
-                _ => return Err(Model(ModelError::InvalidTimestamp(format!("Invalid timestamp: {}", ts))))
-            }
-        } else {
-            Utc::now()
-        };
-        let locked_timestamp = if let Some(ts) = raw["locked_timestamp"].as_u64() {
-            match Utc.timestamp_millis_opt(ts as i64) {
-                chrono::LocalResult::Single(t) => Some(t.with_timezone(&Utc)),
-                _ => return Err(Model(ModelError::InvalidTimestamp(format!("Invalid timestamp: {}", ts))))
-            }
-        } else {
-            None
-        };
-        let message_count = raw.get("message_count").ok_or(Model(ModelError::MissingField("message_count".into())))?.as_u64().ok_or(Model(ModelError::InvalidPayload("message_count".into())))?;
-        let member_count = raw.get("member_count").ok_or(Model(ModelError::MissingField("member_count".into())))?.as_u64().ok_or(Model(ModelError::InvalidPayload("member_count".into())))?;
-        let thread_metadata = ThreadMetadata::from_raw(raw.get("thread_metadata").ok_or(Model(ModelError::MissingField("thread_metadata".into())))?.to_owned(), shard)?;
-        let default_auto_archive_duration = raw.get("default_auto_archive_duration").ok_or(Model(ModelError::MissingField("default_auto_archive_duration".into())))?.as_u64().ok_or(Model(ModelError::InvalidPayload("default_auto_archive_duration".into())))?;
-
-        Ok(Self {
-            id,
-            name,
-            guild_id,
-            parent_id,
-            creator_id,
-            kind,
-            last_message_id,
-            locked,
-            auto_archive_duration,
-            archive_timestamp,
-            locked_timestamp,
-            message_count,
-            member_count,
-            thread_metadata,
-            default_auto_archive_duration,
-            messages: CacheDock::new(MAX_MESSAGE_CACHE_SIZE)
-        })
-    }
-}
-
 /// Represents a public thread channel.
 ///
 /// Reference:
@@ -775,20 +520,24 @@ impl HttpRessource for AnnouncementThread {
 pub struct PublicThread {
     pub id: ChannelId,
     pub name: Option<String>,
-    pub guild_id: GuildId,
+    pub guild_id: Option<GuildId>,
     pub parent_id: Option<ChannelId>,
     pub creator_id: String,
+    #[serde(rename = "type")]
     pub kind: ChannelKind,
     pub last_message_id: Option<String>,
     pub locked: bool,
     pub auto_archive_duration: u64,
-    pub archive_timestamp: chrono::DateTime<Utc>,
+    
+    pub archive_timestamp: Option<chrono::DateTime<Utc>>,
+    
     pub locked_timestamp: Option<chrono::DateTime<Utc>>,
     pub message_count: u64,
     pub member_count: u64,
     pub thread_metadata: ThreadMetadata,
     pub default_auto_archive_duration: u64,
 
+    #[serde(default = "crate::manager::cache::default_cache_dock")]
     pub messages: CacheDock<Snowflake, Message>
 }
 
@@ -812,52 +561,6 @@ impl UpdateCache for PublicThread {
     }
 }
 
-impl HttpRessource for PublicThread {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let id = ChannelId::from_raw(raw.get("id").ok_or(Model(ModelError::MissingField("id".into())))?.clone(), shard)?;
-        let name = raw.get("name").and_then(|x| x.as_str()).map(|x| x.to_string());
-        let guild_id = GuildId::from_raw(raw.get("guild_id").ok_or(Model(ModelError::MissingField("guild_d".into())))?.clone(), shard)?;
-        let parent_id = raw.get("parent_id").map(|x| ChannelId::from_raw(x.clone(), shard)).transpose()?;
-        let creator_id = raw.get("creator_id").and_then(|x| x.as_str()).ok_or(Model(ModelError::MissingField("creator_id".into())))?.to_string();
-        let kind = ChannelKind::from_raw(raw.get("type").ok_or(Model(ModelError::MissingField("type".into())))?.clone(), shard)?;
-        let last_message_id = raw.get("last_message_id").and_then(|x| x.as_str()).map(|x| x.to_string());
-        let locked = raw.get("locked").and_then(|x| x.as_bool()).ok_or(Model(ModelError::MissingField("locked".into())))?;
-        let auto_archive_duration = raw.get("auto_archive_duration").and_then(|x| x.as_u64()).ok_or(Model(ModelError::MissingField("auto_archive_duration".into())))?;
-        let archive_timestamp = if let Some(ts) = raw["archive_timestamp"].as_u64() {
-            match Utc.timestamp_millis_opt(ts as i64) {
-                chrono::LocalResult::Single(t) => t.with_timezone(&Utc),
-                _ => return Err(Model(ModelError::InvalidTimestamp(format!("Invalid timestamp: {}", ts))))
-            }
-        } else {
-            Utc::now()
-        };
-        let locked_timestamp = raw.get("locked_timestamp").and_then(|x| x.as_str()).and_then(|x| x.parse::<chrono::DateTime<Utc>>().ok());
-        let message_count = raw.get("message_count").and_then(|x| x.as_u64()).ok_or(Model(ModelError::MissingField("message_count".into())))?;
-        let member_count = raw.get("member_count").and_then(|x| x.as_u64()).ok_or(Model(ModelError::MissingField("member_count".into())))?;
-        let thread_metadata = ThreadMetadata::from_raw(raw.get("thread_metadata").ok_or(Model(ModelError::MissingField("thread_metadata".into())))?.clone(), shard)?;
-        let default_auto_archive_duration = raw.get("default_auto_archive_duration").and_then(|x| x.as_u64()).ok_or(Model(ModelError::MissingField("default_auto_archive_duration".into())))?;
-
-        Ok(Self {
-            id,
-            name,
-            guild_id,
-            parent_id,
-            creator_id,
-            kind,
-            last_message_id,
-            locked,
-            auto_archive_duration,
-            archive_timestamp,
-            locked_timestamp,
-            message_count,
-            member_count,
-            thread_metadata,
-            default_auto_archive_duration,
-            messages: CacheDock::new(MAX_MESSAGE_CACHE_SIZE)
-        })
-    }
-}
-
 /// Represents a private thread channel.
 ///
 /// Reference:
@@ -866,14 +569,17 @@ impl HttpRessource for PublicThread {
 pub struct PrivateThread {
     pub id: ChannelId,
     pub name: Option<String>,
-    pub guild_id: GuildId,
+    pub guild_id: Option<GuildId>,
     pub parent_id: Option<ChannelId>,
     pub creator_id: String,
+    #[serde(rename = "type")]
     pub kind: ChannelKind,
     pub last_message_id: Option<String>,
     pub locked: bool,
     pub auto_archive_duration: u64,
-    pub archive_timestamp: chrono::DateTime<Utc>,
+    
+    pub archive_timestamp: Option<chrono::DateTime<Utc>>,
+    
     pub locked_timestamp: Option<chrono::DateTime<Utc>>,
     pub message_count: u64,
     pub member_count: u64,
@@ -903,52 +609,6 @@ impl UpdateCache for PrivateThread {
     }
 }
 
-impl HttpRessource for PrivateThread {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let id = ChannelId::from_raw(raw.get("id").ok_or(Model(ModelError::MissingField("id".into())))?.clone(), shard)?;
-        let name = raw.get("name").and_then(|x| x.as_str()).map(|x| x.to_string());
-        let guild_id = GuildId::from_raw(raw.get("guild_id").ok_or(Model(ModelError::MissingField("guild_d".into())))?.clone(), shard)?;
-        let parent_id = raw.get("parent_id").map(|x| ChannelId::from_raw(x.clone(), shard)).transpose()?;
-        let creator_id = raw.get("creator_id").and_then(|x| x.as_str()).ok_or(Model(ModelError::MissingField("creator_id".into())))?.to_string();
-        let kind = ChannelKind::from_raw(raw.get("type").ok_or(Model(ModelError::MissingField("type".into())))?.clone(), shard)?;
-        let last_message_id = raw.get("last_message_id").and_then(|x| x.as_str()).map(|x| x.to_string());
-        let locked = raw.get("locked").and_then(|x| x.as_bool()).ok_or(Model(ModelError::MissingField("locked".into())))?;
-        let auto_archive_duration = raw.get("auto_archive_duration").and_then(|x| x.as_u64()).ok_or(Model(ModelError::MissingField("auto_archive_duration".into())))?;
-        let archive_timestamp = if let Some(ts) = raw["archive_timestamp"].as_u64() {
-            match Utc.timestamp_millis_opt(ts as i64) {
-                chrono::LocalResult::Single(t) => t.with_timezone(&Utc),
-                _ => return Err(Model(ModelError::InvalidTimestamp(format!("Invalid timestamp: {}", ts))))
-            }
-        } else {
-            Utc::now()
-        };
-        let locked_timestamp = raw.get("locked_timestamp").and_then(|x| x.as_str()).and_then(|x| x.parse::<chrono::DateTime<Utc>>().ok());
-        let message_count = raw.get("message_count").and_then(|x| x.as_u64()).ok_or(Model(ModelError::MissingField("message_count".into())))?;
-        let member_count = raw.get("member_count").and_then(|x| x.as_u64()).ok_or(Model(ModelError::MissingField("member_count".into())))?;
-        let thread_metadata = ThreadMetadata::from_raw(raw.get("thread_metadata").ok_or(Model(ModelError::MissingField("thread_metadata".into())))?.clone(), shard)?;
-        let default_auto_archive_duration = raw.get("default_auto_archive_duration").and_then(|x| x.as_u64()).ok_or(Model(ModelError::MissingField("default_auto_archive_duration".into())))?;
-
-        Ok(Self {
-            id,
-            name,
-            guild_id,
-            parent_id,
-            creator_id,
-            kind,
-            last_message_id,
-            locked,
-            auto_archive_duration,
-            archive_timestamp,
-            locked_timestamp,
-            message_count,
-            member_count,
-            thread_metadata,
-            default_auto_archive_duration,
-            messages: CacheDock::new(MAX_MESSAGE_CACHE_SIZE)
-        })
-    }
-}
-
 /// Represents a guild stage voice channel.
 ///
 /// Reference:
@@ -956,8 +616,10 @@ impl HttpRessource for PrivateThread {
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct GuildStageVoice {
     pub id: ChannelId,
+    #[serde(rename = "type")]
+    pub kind: ChannelKind,
     pub name: Option<String>,
-    pub guild_id: GuildId,
+    pub guild_id: Option<GuildId>,
     pub position: Option<u64>,
     /// The permission overwrites for this stage voice channel
     pub permission_overwrites: Option<Vec<PermissionOverwrite>>,
@@ -970,6 +632,7 @@ pub struct GuildStageVoice {
     pub permissions: Option<String>,
     pub nsfw: Option<bool>,
 
+    #[serde(default = "crate::manager::cache::default_cache_dock")]
     pub messages: CacheDock<Snowflake, Message>
 }
 
@@ -1014,39 +677,6 @@ impl UpdateCache for GuildStageVoice {
     }
 }
 
-impl HttpRessource for GuildStageVoice {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let id = ChannelId::from_raw(raw["id"].clone(), shard)?;
-        let name = raw["name"].as_str().map(|x| x.to_string());
-        let guild_id = GuildId::from_raw(raw["guild_id"].clone(), shard)?;
-        let position = raw["position"].as_u64();
-        let permission_overwrites = raw["permission_overwrites"].as_array().map(|x| x.iter().map(|x| PermissionOverwrite::from_raw(x.clone(), shard)).collect::<Result<Vec<_>>>()).transpose()?;
-        let bitrate = raw["bitrate"].as_u64();
-        let user_limit = raw["user_limit"].as_u64();
-        let parent_id = raw.get("parent_id").map(|x| ChannelId::from_raw(x.to_owned(), shard)).transpose()?;
-        let rtc_region = raw["rtc_region"].as_str().map(|x| x.to_string());
-        let video_quality_mode = raw["video_quality_mode"].as_u64();
-        let permissions = raw["permissions"].as_str().map(|x| x.to_string());
-        let nsfw = raw["nsfw"].as_bool();
-
-        Ok(Self {
-            id,
-            name,
-            guild_id,
-            position,
-            permission_overwrites,
-            bitrate,
-            user_limit,
-            parent_id,
-            rtc_region,
-            video_quality_mode,
-            permissions,
-            nsfw,
-            messages: CacheDock::new(MAX_MESSAGE_CACHE_SIZE)
-        })
-    }
-}
-
 /// Represents a guild forum channel.
 ///
 /// Reference:
@@ -1054,8 +684,10 @@ impl HttpRessource for GuildStageVoice {
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct GuildForum {
     pub id: ChannelId,
+    #[serde(rename = "type")]
+    pub kind: ChannelKind,
     pub name: Option<String>,
-    pub guild_id: GuildId,
+    pub guild_id: Option<GuildId>,
     pub position: Option<u64>,
     /// The permission overwrites for this forum channel
     pub permission_overwrites: Option<Vec<PermissionOverwrite>>,
@@ -1065,9 +697,12 @@ pub struct GuildForum {
     /// Amount of seconds a user has to wait before sending another message (0-21600)
     pub rate_limit_per_user: Option<u64>,
     pub parent_id: Option<ChannelId>,
+    
     pub last_pin_timestamp: Option<chrono::DateTime<Utc>>,
     /// Contain the permissions for the user in the channel, including overwrites, only when part of the interaction object
     pub permissions: Option<String>,
+
+    #[serde(default = "crate::manager::cache::default_cache_dock")]
     pub messages: CacheDock<Snowflake, Message>
 }
 
@@ -1109,51 +744,11 @@ impl UpdateCache for GuildForum {
     }
 }
 
-impl HttpRessource for GuildForum {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let id = ChannelId::from_raw(raw["id"].clone(), shard)?;
-        let name = raw["name"].as_str().map(|x| x.to_owned());
-        let guild_id = GuildId::from_raw(raw["guild_id"].clone(), shard)?;
-        let position = raw["position"].as_u64();
-        let permission_overwrites = raw["permission_overwrites"].as_array().map(|x| {
-            x.iter().map(|x| PermissionOverwrite::from_raw(x.clone(), shard)).collect::<Result<Vec<_>>>()
-        }).transpose()?;
-        let nsfw = raw["nsfw"].as_bool();
-        let last_message_id = raw["last_message_id"].as_str().map(|x| x.to_owned());
-        let rate_limit_per_user = raw["rate_limit_per_user"].as_u64();
-        let parent_id = raw.get("parent_id").map(|x| ChannelId::from_raw(x.to_owned(), shard).unwrap());
-        let last_pin_timestamp = if let Some(ts) = raw["last_pin_timestamp"].as_u64() {
-            match Utc.timestamp_millis_opt(ts as i64) {
-                chrono::LocalResult::Single(t) => Some(t.with_timezone(&Utc)),
-                _ => return Err(Model(ModelError::InvalidTimestamp(format!("Invalid timestamp: {}", ts))))
-            }
-        } else {
-            None
-        };
-        let permissions = raw["permissions"].as_str().map(|x| x.to_owned());
-
-        Ok(Self {
-            id,
-            name,
-            guild_id,
-            position,
-            permission_overwrites,
-            nsfw,
-            last_message_id,
-            rate_limit_per_user,
-            parent_id,
-            last_pin_timestamp,
-            permissions,
-            messages: CacheDock::new(MAX_MESSAGE_CACHE_SIZE)
-        })
-    }
-}
-
 /// Represent every kind of channel.
 ///
 /// Reference:
 /// - [Discord Docs](https://discord.com/developers/docs/resources/channel#channel-object-channel-types)
-#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Clone, Serialize, Eq, PartialEq)]
 pub enum ChannelKind {
     GuildText = 0,
     Dm = 1,
@@ -1171,42 +766,31 @@ pub enum ChannelKind {
     GuildForum = 15
 }
 
-impl HttpRessource for ChannelKind {
-    fn from_raw(raw: Value, _shard: Option<u64>) -> Result<Self> {
-        match raw.as_u64() {
-            Some(0) => Ok(ChannelKind::GuildText),
-            Some(1) => Ok(ChannelKind::Dm),
-            Some(2) => Ok(ChannelKind::GuildVoice),
-            Some(3) => Ok(ChannelKind::GroupDm),
-            Some(4) => Ok(ChannelKind::GuildCategory),
-            Some(5) => Ok(ChannelKind::GuildAnnouncement),
-            Some(10) => Ok(ChannelKind::AnnouncementThread),
-            Some(11) => Ok(ChannelKind::PublicThread),
-            Some(12) => Ok(ChannelKind::PrivateThread),
-            Some(13) => Ok(ChannelKind::GuildStageVoice),
-            Some(14) => Ok(ChannelKind::GuildDirectory),
-            Some(15) => Ok(ChannelKind::GuildForum),
-            _ => Err(Model(ModelError::InvalidPayload("Invalid channel kind".into()))),
+impl<'de> Deserialize<'de> for ChannelKind {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error> where D: Deserializer<'de> {
+        let value: u64 = Deserialize::deserialize(deserializer)?;
+
+        match value {
+            0 => Ok(Self::GuildText),
+            1 => Ok(Self::Dm),
+            2 => Ok(Self::GuildVoice),
+            3 => Ok(Self::GroupDm),
+            4 => Ok(Self::GuildCategory),
+            5 => Ok(Self::GuildAnnouncement),
+            10 => Ok(Self::AnnouncementThread),
+            11 => Ok(Self::PublicThread),
+            12 => Ok(Self::PrivateThread),
+            13 => Ok(Self::GuildStageVoice),
+            14 => Ok(Self::GuildDirectory),
+            15 => Ok(Self::GuildForum),
+            _ => Err(D::Error::custom(format!("unknown channel kind: {}", value)))
         }
     }
 }
 
 impl ChannelKind {
     pub(crate) fn to_json(&self) -> Value {
-        Value::Number(match self {
-            ChannelKind::GuildText => 0.into(),
-            ChannelKind::Dm => 1.into(),
-            ChannelKind::GuildVoice => 2.into(),
-            ChannelKind::GroupDm => 3.into(),
-            ChannelKind::GuildCategory => 4.into(),
-            ChannelKind::GuildAnnouncement => 5.into(),
-            ChannelKind::AnnouncementThread => 10.into(),
-            ChannelKind::PublicThread => 11.into(),
-            ChannelKind::PrivateThread => 12.into(),
-            ChannelKind::GuildStageVoice => 13.into(),
-            ChannelKind::GuildDirectory => 14.into(),
-            ChannelKind::GuildForum => 15.into(),
-        })
+        serde_json::to_value(self).unwrap_or(Value::Null)
     }
 }
 
@@ -1217,41 +801,16 @@ impl ChannelKind {
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct PermissionOverwrite {
     pub id: String,
+    #[serde(rename = "type")]
     pub kind: PermissionOverwriteKind,
     pub allow: String,
     pub deny: String,
 }
 
-impl HttpRessource for PermissionOverwrite {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let id = raw["id"].as_str().ok_or(Model(ModelError::InvalidPayload("Invalid permission overwrite id".into())))?.to_string();
-        let kind = PermissionOverwriteKind::from_raw(raw["type"].clone(), shard)?;
-        let allow = raw["allow"].as_str().ok_or(Model(ModelError::InvalidPayload("Invalid permission overwrite allow".into())))?.to_string();
-        let deny = raw["deny"].as_str().ok_or(Model(ModelError::InvalidPayload("Invalid permission overwrite deny".into())))?.to_string();
-
-        Ok(PermissionOverwrite {
-            id,
-            kind,
-            allow,
-            deny,
-        })
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub enum PermissionOverwriteKind {
-    Role,
-    Member,
-}
-
-impl HttpRessource for PermissionOverwriteKind {
-    fn from_raw(raw: Value, _shard: Option<u64>) -> Result<Self> {
-        match raw.as_u64() {
-            Some(0) => Ok(PermissionOverwriteKind::Role),
-            Some(1) => Ok(PermissionOverwriteKind::Member),
-            _ => Err(Model(ModelError::InvalidPayload("Invalid permission overwrite kind".into()))),
-        }
-    }
+    Role = 0,
+    Member = 1,
 }
 
 /// Represents a thread metadata.
@@ -1262,43 +821,10 @@ impl HttpRessource for PermissionOverwriteKind {
 pub struct ThreadMetadata {
     pub archived: bool,
     pub auto_archive_duration: u64,
-    pub archive_timestamp: chrono::DateTime<Utc>,
+    
+    pub archive_timestamp: Option<chrono::DateTime<Utc>>,
     pub locked: bool,
     pub invitable: Option<bool>,
-    pub create_timestamp: chrono::DateTime<Utc>,
-}
-
-impl HttpRessource for ThreadMetadata {
-    fn from_raw(raw: Value, _shard: Option<u64>) -> Result<Self> {
-        let archived = raw["archived"].as_bool().ok_or(Model(ModelError::InvalidPayload("Invalid thread metadata archived".into())))?;
-        let auto_archive_duration = raw["auto_archive_duration"].as_u64().ok_or(Model(ModelError::InvalidPayload("Invalid thread metadata auto archive duration".into())))?;
-        let timestamp = if let Some(ts) = raw["archive_timestamp"].as_u64() {
-            match Utc.timestamp_millis_opt(ts as i64) {
-                chrono::LocalResult::Single(t) => t.with_timezone(&Utc),
-                _ => return Err(Model(ModelError::InvalidTimestamp(format!("Invalid timestamp: {}", ts))))
-            }
-        } else {
-            Utc::now()
-        };
-
-        let locked = raw["locked"].as_bool().ok_or(Model(ModelError::InvalidPayload("Invalid thread metadata locked".into())))?;
-        let invitable = raw["invitable"].as_bool();
-        let create_timestamp = if let Some(ts) = raw["archive_timestamp"].as_u64() {
-            match Utc.timestamp_millis_opt(ts as i64) {
-                chrono::LocalResult::Single(t) => t.with_timezone(&Utc),
-                _ => return Err(Model(ModelError::InvalidTimestamp(format!("Invalid timestamp: {}", ts))))
-            }
-        } else {
-            Utc::now()
-        };
-
-        Ok(Self {
-            archived,
-            auto_archive_duration,
-            archive_timestamp: timestamp,
-            locked,
-            invitable,
-            create_timestamp
-        })
-    }
+    
+    pub create_timestamp: Option<chrono::DateTime<Utc>>,
 }

@@ -11,9 +11,7 @@ use std::fmt::Display;
 use std::num::ParseIntError;
 use chrono::{DateTime, Duration, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use error::{Error, ModelError, Result};
-use crate::manager::http::HttpRessource;
 use crate::models::guild::GuildId;
 use crate::models::user::UserId;
 
@@ -138,13 +136,3 @@ impl Display for Snowflake {
         self.0.to_string().fmt(f)
     }
 }
-
-impl HttpRessource for Snowflake {
-    fn from_raw(raw: Value, _: Option<u64>) -> Result<Self> {
-        match raw.as_str() {
-            Some(snowflake) => Ok(Self(snowflake.into())),
-            None => Err(Error::Model(ModelError::InvalidSnowflake(format!("Failed to parse snowflake: {raw:?}"))))
-        }
-    }
-}
-

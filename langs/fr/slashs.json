@@ -37,6 +37,10 @@
         "6": "Très douteux...",
         "7": "C'est décidément le cas."
       }
+    },
+    "user_info": {
+      "not_member": "> 📋 **Informations général**\n\n**Pseudonyme**: {username} (<@{id}>)\n**Identifiant:** `{id}`\n**Création du compte :** <t:{account_creation}> (<t:{account_creation}:R>)",
+      "member": "> 📋 **Informations général**\n\n**Pseudonyme**: {username} (<@{id}>)\n**Identifiant:** `{id}`\n**Création du compte :** <t:{account_creation}> (<t:{account_creation}:R>)\n\n📅 **Date d'arrivée** : <t:{join_timestamp}> (<t:{join_timestamp}:R>)"
     }
   }
 }

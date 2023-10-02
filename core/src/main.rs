@@ -2,7 +2,7 @@ mod constants;
 mod events;
 mod tasks;
 mod crates;
-mod interaction_constructor;
+mod application_commands_manager;
 mod scripts;
 mod assets;
 mod database_cleaner;
@@ -26,6 +26,7 @@ use config::Config;
 use database::Database;
 use translation::message;
 use clap::Parser;
+use flexi_logger::Duplicate;
 use crate::scripts::get_guild;
 
 extern crate translation;
@@ -381,14 +382,22 @@ impl EventHandler for Handler {
 
 #[allow(unused_mut)]
 async fn start(cli_args: CliArgs) {
-    // init env logger
-    env_logger::Builder::new()
-        .filter(None, log::LevelFilter::Info)
-        .filter(Some("sqlx"), log::LevelFilter::Warn)
-        .init();
-
     // load config
     let config: Config = config::load_from(constants::CONFIG_PATH.into()).unwrap();
+
+    let _logger = flexi_logger::Logger::try_with_str("info")
+        .expect("Cannot initialize the logger intern configuration")
+        .format_for_files(flexi_logger::colored_detailed_format)
+        .format_for_stdout(flexi_logger::colored_default_format)
+        .write_mode(flexi_logger::WriteMode::BufferAndFlush)
+        .log_to_file(
+            flexi_logger::FileSpec::default()
+                .directory(config.logs_path.as_str())
+        )
+        .duplicate_to_stdout(Duplicate::Info)
+        .start()
+        .expect("Cannot initialize the logger");
+
 
     // write the PID in a file
     {

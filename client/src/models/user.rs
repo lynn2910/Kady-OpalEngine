@@ -1,9 +1,8 @@
 use std::fmt::Display;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use error::{Result, Error, EventError};
+use error::Result;
 use crate::manager::cache::UpdateCache;
-use crate::manager::http::{ApiResult, Http, HttpRessource};
+use crate::manager::http::{ApiResult, Http};
 use crate::models::message::{Message, MessageBuilder};
 use crate::models::Snowflake;
 
@@ -57,12 +56,6 @@ impl From<&User> for UserId {
     }
 }
 
-impl HttpRessource for UserId {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        Ok(Self(Snowflake::from_raw(raw, shard)?))
-    }
-}
-
 impl UserId {
     pub async fn send(
         &self,
@@ -104,22 +97,6 @@ impl UpdateCache for ClientUser {
     }
 }
 
-impl HttpRessource for ClientUser {
-    fn from_raw(raw: Value, _: Option<u64>) -> Result<Self> {
-        let avatar = raw["avatar"].as_str().map(|avatar| avatar.to_string());
-        let bot = if let Some(bot) = raw["bot"].as_bool() { bot } else { return Err(Error::Event(EventError::MissingField("No 'bot' field".into()))) };
-        let discriminator = if let Some(discriminator) = raw["discriminator"].as_str() { discriminator.to_string() } else { return Err(Error::Event(EventError::MissingField("No 'discriminator' field".into()))) };
-        let flags = raw["flags"].as_u64().map(|flags| flags as u32);
-        let global_name = raw["global_name"].as_str().map(|global_name| global_name.to_string());
-        let id = if let Some(id) = raw["id"].as_str() { id.to_string().into() } else { return Err(Error::Event(EventError::MissingField("No 'id' field".into()))) };
-        let verified = if let Some(verified) = raw["verified"].as_bool() { verified } else { return Err(Error::Event(EventError::MissingField("No 'verified' field".into()))) };
-        let username = if let Some(username) = raw["username"].as_str() { username.to_string() } else { return Err(Error::Event(EventError::MissingField("No 'username' field".into()))) };
-        let mfa_enabled = if let Some(mfa_enabled) = raw["mfa_enabled"].as_bool() { mfa_enabled } else { return Err(Error::Event(EventError::MissingField("No 'mfa_enabled' field".into()))) };
-
-        Ok(Self { avatar, bot, discriminator, flags, global_name, id, verified, username, mfa_enabled })
-    }
-}
-
 impl ClientUser {
     pub fn tag(&self) -> String {
         format!("{}#{}", self.username, self.discriminator)
@@ -154,7 +131,7 @@ impl ClientUser {
 pub struct Application {
     pub flags: u64,
     pub id: Snowflake,
-    pub public: bool,
+    pub public: Option<bool>,
     pub name: String,
     pub description: String,
     pub summary: String,
@@ -170,20 +147,6 @@ impl UpdateCache for Application {
         if self.description != from.description { self.description = from.description.clone() }
         if self.summary != from.summary { self.summary = from.summary.clone() }
         if self.cover_image != from.cover_image { self.cover_image = from.cover_image.clone() }
-    }
-}
-
-impl HttpRessource for Application {
-    fn from_raw(raw: Value, _shard: Option<u64>) -> Result<Self> {
-        let flags = if let Some(flags) = raw["flags"].as_u64() { flags } else { return Err(Error::Event(EventError::MissingField("No 'flags' field".into()))) };
-        let id = if let Some(id) = raw["id"].as_str() { id.to_string().into() } else { return Err(Error::Event(EventError::MissingField("No 'id' field".into()))) };
-        let public = if let Some(public) = raw["bot_public"].as_bool() { public } else { return Err(Error::Event(EventError::MissingField("No 'bot_public' field".into()))) };
-        let name = if let Some(name) = raw["name"].as_str() { name.to_string() } else { return Err(Error::Event(EventError::MissingField("No 'name' field".into()))) };
-        let description = if let Some(description) = raw["description"].as_str() { description.to_string() } else { return Err(Error::Event(EventError::MissingField("No 'description' field".into()))) };
-        let summary = if let Some(summary) = raw["summary"].as_str() { summary.to_string() } else { return Err(Error::Event(EventError::MissingField("No 'summary' field".into()))) };
-        let cover_image = raw["cover_image"].as_str().map(|cover_image| cover_image.to_string());
-
-        Ok(Self { flags, id, public, name, description, summary, cover_image })
     }
 }
 
@@ -211,7 +174,7 @@ impl Application {
 pub struct User {
     pub id: UserId,
     pub username: String,
-    pub discriminator: String,
+    pub discriminator: Option<String>,
     /// the user's display name, if it is set. For bots, this is the application name
     pub global_name: Option<String>,
     pub avatar: Option<String>,
@@ -284,49 +247,10 @@ impl UpdateCache for User {
     }
 }
 
-impl HttpRessource for User {
-    fn from_raw(raw: Value, _shard: Option<u64>) -> Result<Self> {
-        let id: UserId = if let Some(id) = raw["id"].as_str() { id.to_string().into() } else { return Err(Error::Event(EventError::MissingField("No 'id' field".into()))) };
-        let username = if let Some(username) = raw["username"].as_str() { username.to_string() } else { return Err(Error::Event(EventError::MissingField("No 'username' field".into()))) };
-        let discriminator = if let Some(discriminator) = raw["discriminator"].as_str() { discriminator.to_string() } else { return Err(Error::Event(EventError::MissingField("No 'discriminator' field".into()))) };
-        let global_name = raw["global_name"].as_str().map(|global_name| global_name.to_string());
-        let avatar = raw["avatar"].as_str().map(|avatar| avatar.to_string());
-        let bot = raw["bot"].as_bool();
-        let system = raw["system"].as_bool();
-        let banner = raw["banner"].as_str().map(|banner| banner.to_string());
-        let accent_color = raw["accent_color"].as_u64();
-        let locale = raw["locale"].as_str().map(|locale| locale.to_string());
-        let flags = raw["flags"].as_u64();
-        let public_flags = raw["public_flags"].as_u64();
-        let premium_type = raw["premium_type"].as_u64().map(NitroType::from_u64);
-
-        Ok(Self { id, username, discriminator, global_name, avatar, bot, system, banner, accent_color, locale, flags, public_flags, premium_type })
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq, Hash)]
 pub enum NitroType {
     None = 0,
     NitroClassic = 1,
     Nitro = 2,
     NitroBasic = 3
-}
-
-impl NitroType {
-    pub(crate) fn from_u64(n: u64) -> Self {
-        match n {
-            1 => Self::NitroClassic,
-            2 => Self::Nitro,
-            3 => Self::NitroBasic,
-            _ => Self::None
-        }
-    }
-}
-
-impl HttpRessource for NitroType {
-    fn from_raw(raw: Value, _shard: Option<u64>) -> Result<Self> {
-        let n = if let Some(n) = raw.as_u64() { n } else { return Err(Error::Event(EventError::MissingField("No 'premium_type' field".into()))) };
-
-        Ok(Self::from_u64(n))
-    }
 }

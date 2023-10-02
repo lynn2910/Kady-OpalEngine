@@ -75,6 +75,7 @@ pub(crate) async fn slash_command_received(ctx: &Context, payload: &InteractionC
         "rateit" | "note" => slashs::fun::rateit::triggered(ctx, payload).await,
         "unacceptable" => slashs::fun::unacceptable::triggered(ctx, payload).await,
         "8ball" => slashs::fun::eight_ball::triggered(ctx, payload).await,
+        "userinfo" => slashs::common::user_info::triggered(ctx, payload).await,
         _ => {
             let local = get_guild_locale(&payload.interaction.guild_locale);
             if let Err(e) = payload.interaction.reply(&ctx.skynet, unknown_command(local)).await {
@@ -204,7 +205,14 @@ pub async fn get_guild(ctx: &Context, guild: &GuildId) -> Option<Guild> {
 
             Some(guild)
         }
-        _ => None
+        Ok(Err(e)) => {
+            error!(target: "Runtime", "Failed to fetch guild {:#?}: {:#?}", guild, e);
+            None
+        }
+        Err(e) => {
+            error!(target: "Runtime", "Failed to fetch guild {:#?}: {:#?}", guild, e);
+            None
+        }
     }
 }
 

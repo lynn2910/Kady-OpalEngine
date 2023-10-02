@@ -375,7 +375,7 @@ pub(crate) mod admin_reload_slashs {
 
         let _ = payload.interaction.defer(&ctx.skynet, None).await;
 
-        let (success, errors) = crate::interaction_constructor::instance_trigger(
+        let (success, errors) = crate::application_commands_manager::instance_trigger(
             ctx.skynet.clone(),
             ctx.cache.clone()
         ).await;
@@ -464,6 +464,7 @@ pub(crate) mod admin_memory_report {
     use client::manager::events::Context;
     use client::models::events::InteractionCreate;
     use client::models::message::MessageBuilder;
+    use config::Config;
     use translation::message;
     use crate::scripts::{get_guild_locale, get_user_id};
     use crate::scripts::slashs::admin::{is_admin, reports};
@@ -532,11 +533,24 @@ pub(crate) mod admin_memory_report {
             return;
         }
 
+        let config = match ctx.get_data::<Config>().await {
+            Some(c) => c,
+            None => {
+                let _ = payload.interaction.reply(
+                    &ctx.skynet,
+                    MessageBuilder::new()
+                        .set_content("> ❌ ** ** **Cannot get the object** `Config` **from the context.**")
+                ).await;
+                return;
+            }
+        };
+
         let _ = payload.interaction.defer(&ctx.skynet, None).await;
 
         let report = crate::tasks::report_memory_usage(
             ctx.cache.clone(),
             ctx.shard_manager.clone(),
+            config,
             // get Kb
             false
         ).await;

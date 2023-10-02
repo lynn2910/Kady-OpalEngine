@@ -6,6 +6,10 @@ langs = "C:/Users/cedic/Code/kady/Luna/langs"
 pid = "C:/Users/cedic/Code/kady/Luna/pid"
 dynamic_requests = "C:/Users/cedic/Code/kady/Luna/requests.toml"
 
+logs_path = "C:/Users/cedic/Code/kady/Luna/logs/"
+memory_report_path = "C:/Users/cedic/Code/kady/Luna/_debug/mem_report"
+core_path = "C:/Users/cedic/Code/kady/Luna/target/debug/core.exe"
+
 
 [security]
 archive_path = "C:/Users/cedic/Code/kady/Luna/archive.saf"

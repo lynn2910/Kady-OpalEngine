@@ -1,0 +1,5 @@
+[2023-09-26 10:54:01.006478 +02:00] INFO [client] client\src\lib.rs:325: Event handler registered
+[2023-09-26 10:54:01.007922 +02:00] INFO [api] api\src\lib.rs:45: API is listening on 0.0.0.0:9090
+[2023-09-26 10:54:01.878291 +02:00] INFO [core] core\src\main.rs:254: Client started
+[2023-09-26 10:54:02.160114 +02:00] INFO [core] core\src\main.rs:39: Shard 0 ready
+[2023-09-26 10:54:02.160183 +02:00] INFO [core] core\src\main.rs:46: Connected as Luna Beta

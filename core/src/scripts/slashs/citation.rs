@@ -65,16 +65,15 @@ pub(crate) async fn triggered(ctx: &Context, payload: &InteractionCreate) {
     }
 
     // we check if the channel exist
-    {
-        if let Some(id) = guild_data.citation_channel.clone() {
-            match ctx.skynet.fetch_channel(&id.into()).await {
-                Ok(c) => match c {
-                    Ok(_) => (),
-                    Err(e) => {
-                        error!(target: "Runtime", "An error was received from the api while fetching the citation's channel: {e:#?}");
-                        internal_error(ctx, &payload.interaction, local , "12002").await;
+    if let Some(id) = guild_data.citation_channel.clone() {
+        match ctx.skynet.fetch_channel(&id.into()).await {
+            Ok(c) => match c {
+                Ok(_) => (),
+                Err(e) => {
+                    error!(target: "Runtime", "An error was received from the api while fetching the citation's channel: {e:#?}");
+                    internal_error(ctx, &payload.interaction, local , "12002").await;
 
-                        broadcast_error!(
+                    broadcast_error!(
                             localisation: BroadcastLocalisation::default()
                                 .set_guild(payload.interaction.guild_id.clone())
                                 .set_channel(payload.interaction.channel_id.clone())
@@ -88,14 +87,14 @@ pub(crate) async fn triggered(ctx: &Context, payload: &InteractionCreate) {
                             ctx.skynet.as_ref()
                         );
 
-                        return;
-                    }
-                },
-                Err(e) => {
-                    error!(target: "Runtime", "An error occured while trying to fetch the citation's channel: {e:#?}");
-                    internal_error(ctx, &payload.interaction, local , "12001").await;
+                    return;
+                }
+            },
+            Err(e) => {
+                error!(target: "Runtime", "An error occured while trying to fetch the citation's channel: {e:#?}");
+                internal_error(ctx, &payload.interaction, local , "12001").await;
 
-                    broadcast_error!(
+                broadcast_error!(
                         localisation: BroadcastLocalisation::default()
                             .set_guild(payload.interaction.guild_id.clone())
                             .set_channel(payload.interaction.channel_id.clone())
@@ -109,14 +108,13 @@ pub(crate) async fn triggered(ctx: &Context, payload: &InteractionCreate) {
                         ctx.skynet.as_ref()
                     );
 
-                    return;
-                }
+                return;
             }
-        } else {
-            no_valid_channel(ctx, payload).await;
-            return;
         }
-    };
+    } else {
+        no_valid_channel(ctx, payload).await;
+        return;
+    }
 
     // we get the text
     let text: String = match &payload.interaction.data {

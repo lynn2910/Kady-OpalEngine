@@ -18,6 +18,12 @@ pub enum Error {
     Runtime(RuntimeError)
 }
 
+impl From<serde_json::error::Error> for Error {
+    fn from(value: serde_json::Error) -> Self {
+        Error::Api(ApiError::InvalidJson(value.to_string()))
+    }
+}
+
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{self:?}")
@@ -123,6 +129,7 @@ pub enum ApiError {
     ChannelSend(String),
     TooManyRetry,
     ConversionError(String),
+    Deserialize(String),
 }
 
 /// Represent an error that can occur inside the archive system

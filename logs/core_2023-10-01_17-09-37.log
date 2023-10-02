@@ -1,0 +1,33 @@
+[2023-10-01 17:09:37.699159 +02:00] INFO [client] client\src\lib.rs:325: Event handler registered
+[2023-10-01 17:09:37.700216 +02:00] INFO [api] api\src\lib.rs:45: API is listening on 0.0.0.0:9090
+[2023-10-01 17:09:38.599760 +02:00] INFO [core] core\src\main.rs:254: Client started
+[2023-10-01 17:09:38.912968 +02:00] INFO [core] core\src\main.rs:39: Shard 0 ready
+[2023-10-01 17:09:38.913033 +02:00] INFO [core] core\src\main.rs:46: Connected as Luna Beta
+[[38;5;208m2023-10-01 17:09:54.745717 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 2.765ms[0m
+[[38;5;208m2023-10-01 17:09:57.909254 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.596ms[0m
+[[38;5;208m2023-10-01 17:10:01.986983 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.518ms[0m
+[[38;5;208m2023-10-01 17:10:05.919987 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.594ms[0m
+[[38;5;208m2023-10-01 17:10:09.983550 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.522ms[0m
+[[38;5;208m2023-10-01 17:10:13.950819 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.559ms[0m
+[[38;5;208m2023-10-01 17:10:17.941111 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.564ms[0m
+[[38;5;208m2023-10-01 17:10:22.135124 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.4ms[0m
+[[38;5;208m2023-10-01 17:10:25.938114 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.575ms[0m
+[[38;5;208m2023-10-01 17:10:29.956816 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.552ms[0m
+[[38;5;208m2023-10-01 17:10:34.264119 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.249ms[0m
+[[38;5;208m2023-10-01 17:10:37.938837 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.573ms[0m
+[[38;5;208m2023-10-01 17:10:42.011393 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.502ms[0m
+[[38;5;208m2023-10-01 17:10:45.986316 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.54ms[0m
+[2023-10-01 17:10:49.719946 +02:00] INFO [core::application_commands_manager] core\src\application_commands_manager.rs:86: Creating all slash commands for Common
+[2023-10-01 17:10:51.022880 +02:00] INFO [core::application_commands_manager] core\src\application_commands_manager.rs:86: Creating all slash commands for Tools
+[[38;5;208m2023-10-01 17:10:51.875052 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 2.031ms[0m
+[[38;5;208m2023-10-01 17:10:54.597316 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.334ms[0m
+[2023-10-01 17:10:58.383655 +02:00] INFO [core::application_commands_manager] core\src\application_commands_manager.rs:86: Creating all slash commands for Dev
+[[38;5;208m2023-10-01 17:10:58.556214 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.352ms[0m
+[[38;5;208m2023-10-01 17:11:02.417639 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.488ms[0m
+[[38;5;208m2023-10-01 17:11:06.586457 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.319ms[0m
+[[38;5;208m2023-10-01 17:11:10.390790 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.525ms[0m
+[2023-10-01 17:11:14.202126 +02:00] INFO [core::application_commands_manager] core\src\application_commands_manager.rs:86: Creating all slash commands for Fun
+[[38;5;208m2023-10-01 17:11:14.376297 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.535ms[0m
+[[38;5;208m2023-10-01 17:11:18.498237 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.41ms[0m
+[[38;5;208m2023-10-01 17:11:22.433706 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.474ms[0m
+[[38;5;208m2023-10-01 17:11:26.429952 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.479ms[0m

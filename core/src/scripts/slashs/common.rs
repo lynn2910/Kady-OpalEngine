@@ -527,8 +527,6 @@ pub(crate) mod ping {
     use client::models::message::MessageBuilder;
     use translation::fmt::formatter::Formatter;
     use translation::message;
-    use crate::broadcast_error;
-    use crate::crates::error_broadcaster::*;
     use crate::scripts::get_guild_locale;
 
     pub(crate) async fn triggered(ctx: &Context, payload: &InteractionCreate) {
@@ -554,12 +552,12 @@ pub(crate) mod ping {
                 MessageBuilder::new()
                     .set_content(
                         message!(
-                        local.clone(),
-                        "slashs::ping::content",
-                        Formatter::new()
-                            .add("ping", actual_shard_latency.to_string())
-                            .add("shard_id", (max(ctx.shard_id, 1)).to_string())
-                    )
+                            local.clone(),
+                            "slashs::ping::content",
+                            Formatter::new()
+                                .add("ping", actual_shard_latency.to_string())
+                                .add("shard_id", (max(ctx.shard_id, 1)).to_string())
+                        )
                     )
                     .add_component(
                         Component::ActionRow(
@@ -567,10 +565,10 @@ pub(crate) mod ping {
                                 Component::Button(
                                     Button::new("A")
                                         .set_label(message!(
-                                        local.clone(),
-                                        "slashs::ping::button::label",
-                                        Formatter::new().add("median", median.to_string())
-                                    ))
+                                            local.clone(),
+                                            "slashs::ping::button::label",
+                                            Formatter::new().add("median", median.to_string())
+                                        ))
                                         .set_emoji(Emoji::new(None, message!(local, "slashs::ping::button::emoji")))
                                         .set_style(ButtonStyle::Secondary)
                                         .set_disabled(true)
@@ -582,19 +580,194 @@ pub(crate) mod ping {
         };
 
         let _ = payload.interaction.reply(&ctx.skynet, msg).await;
+    }
+}
 
-        // FIXME: this is a temporary test
-        broadcast_error!(
-            localisation: BroadcastLocalisation::default()
-                .set_guild(payload.interaction.guild_id.clone())
-                .set_channel(payload.interaction.channel_id.clone())
-                .set_code_path("core/src/scripts/slashs/common.rs:ping:139"),
-            interaction: BroadcastInteraction::default()
-                .set_name("ping")
-                .set_type(BroadcastInteractionType::SlashCommand),
-            details: BroadcastDetails::default()
-                .add("reason", "Cannot get shard manager"),
-            ctx.skynet.as_ref()
-        );
+
+/// Error code: 17xxx
+pub(crate) mod user_info {
+    use client::manager::events::Context;
+    use client::models::components::Color;
+    use client::models::components::embed::Embed;
+    use client::models::events::InteractionCreate;
+    use client::models::interaction::{ApplicationCommandOptionType, InteractionDataOptionValue};
+    use client::models::message::MessageBuilder;
+    use client::models::SnowflakeInfo;
+    use client::models::user::{User, UserId};
+    use translation::fmt::formatter::Formatter;
+    use translation::message;
+    use crate::scripts::{get_guild_locale, get_user, get_user_id};
+    use crate::scripts::slashs::internal_error;
+
+    pub(crate) async fn triggered(ctx: &Context, payload: &InteractionCreate) {
+        let local = get_guild_locale(&payload.interaction.guild_locale);
+
+        let interaction_data_options = match &payload.interaction.data {
+            Some(data) => data.options.as_ref(),
+            None => {
+                internal_error(ctx, &payload.interaction, local, "17001").await;
+                return;
+            }
+        };
+
+        if let Some(options) = interaction_data_options {
+            let user_id = options.iter()
+                .find(|o| o.name == "user" && o.option_type == ApplicationCommandOptionType::User);
+
+            match user_id {
+                Some(user_id) => {
+                    match user_id.value.as_ref() {
+                        Some(InteractionDataOptionValue::String(id)) => {
+                            user_id_given(
+                                ctx,
+                                payload,
+                                local,
+                                id.clone()
+                            ).await;
+                        },
+                        _ => {
+                            internal_error(ctx, &payload.interaction, local, "17003").await;
+                        }
+                    }
+                }
+                None => {
+                    no_options_given(ctx, payload, local).await;
+                }
+            }
+        } else {
+            no_options_given(ctx, payload, local).await;
+        }
+    }
+
+    async fn user_id_given(
+        ctx: &Context,
+        payload: &InteractionCreate,
+        local: String,
+        id: String
+    ) {
+        let user_id = id.into();
+
+        let user = match get_user(ctx, &user_id).await {
+            Some(u) => u,
+            None => {
+                let _ = payload.interaction.reply(
+                    &ctx.skynet,
+                    MessageBuilder::new()
+                        .set_content(message!(local, "errors:cannot_acquire_user"))
+                ).await;
+                return;
+            }
+        };
+
+        send_informations(
+            ctx,
+            payload,
+            local,
+            &user,
+            &user_id
+        ).await;
+    }
+
+    async fn no_options_given(ctx: &Context, payload: &InteractionCreate, local: String) {
+        let user_id = match get_user_id(&payload.interaction.user, &payload.interaction.member) {
+            Some(id) => id,
+            None => {
+                let _ = payload.interaction.reply(
+                    &ctx.skynet,
+                    MessageBuilder::new()
+                        .set_content(message!(local, "errors::cannot_get_user_id"))
+                ).await;
+                return;
+            }
+        };
+
+        let user = match get_user(ctx, &user_id).await {
+            Some(u) => u,
+            None => {
+                let _ = payload.interaction.reply(
+                    &ctx.skynet,
+                    MessageBuilder::new()
+                        .set_content(message!(local, "errors::cannot_acquire_user"))
+                ).await;
+                return;
+            }
+        };
+
+        send_informations(
+            ctx,
+            payload,
+            local,
+            &user,
+            &user_id
+        ).await;
+    }
+
+    async fn send_informations(
+        ctx: &Context,
+        payload: &InteractionCreate,
+        local: String,
+        user: &User,
+        user_id: &UserId
+    ) {
+
+        let snowflake_informations = match SnowflakeInfo::try_from(user_id.clone()) {
+            Ok(informations) => informations,
+            Err(e) => {
+                internal_error(ctx, &payload.interaction, local, "17002").await;
+                return;
+            }
+        };
+
+        if let Some(member) = &payload.interaction.member {
+            // send the member's message
+            let _ = payload.interaction.reply(
+                &ctx.skynet,
+                MessageBuilder::new()
+                    .add_embed(
+                        Embed::new()
+                            .set_color(Color::EMBED_COLOR)
+                            .set_description(
+                                message!(
+                                    local,
+                                    "slashs::user_info::member",
+                                    Formatter::new()
+                                        .add("id", user_id.to_string())
+                                        .add("username", user.global_name.clone().unwrap_or(user.username.clone()))
+                                        .add(
+                                            "account_creation",
+                                            snowflake_informations.timestamp.timestamp_millis() / 1000
+                                        )
+                                        .add(
+                                            "join_timestamp",
+                                            member.joined_at.timestamp_millis() / 1000
+                                        )
+                                )
+                            )
+                    )
+            ).await;
+        } else {
+            // send the user's message
+            let _ = payload.interaction.reply(
+                &ctx.skynet,
+                MessageBuilder::new()
+                    .add_embed(
+                        Embed::new()
+                            .set_color(Color::EMBED_COLOR)
+                            .set_description(
+                                message!(
+                                    local,
+                                    "slashs::user_info::not_member",
+                                    Formatter::new()
+                                        .add("id", user_id.to_string())
+                                        .add("username", user.global_name.clone().unwrap_or(user.username.clone()))
+                                        .add(
+                                            "account_creation",
+                                            snowflake_informations.timestamp.timestamp_millis() / 1000
+                                        )
+                                )
+                            )
+                    )
+            ).await;
+        }
     }
 }

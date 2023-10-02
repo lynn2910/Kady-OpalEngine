@@ -25,6 +25,7 @@ hex-literal = "0.4.1"
 clap = { version = "4.3.19", features = ["default", "derive"]}
 strsim = "0.10.0"
 openssl = { version = "0.10.55", features = ["vendored"] }
+flexi_logger = { version = "0.27.0", features = ["default", "colors"] }
 
 [dependencies.sqlx]
 workspace = true

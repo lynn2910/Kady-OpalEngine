@@ -1,0 +1,92 @@
+[2023-10-01 17:06:42.849074 +02:00] INFO [client] client\src\lib.rs:325: Event handler registered
+[2023-10-01 17:06:42.850927 +02:00] INFO [api] api\src\lib.rs:45: API is listening on 0.0.0.0:9090
+[2023-10-01 17:06:43.935316 +02:00] INFO [core] core\src\main.rs:254: Client started
+[2023-10-01 17:06:44.266488 +02:00] INFO [core] core\src\main.rs:39: Shard 0 ready
+[2023-10-01 17:06:44.266782 +02:00] INFO [core] core\src\main.rs:46: Connected as Luna Beta
+[[38;5;196m2023-10-01 17:06:55.673978 +02:00[0m] [38;5;196mERROR[0m [client::manager::http] client\src\manager\http.rs:1091: [38;5;196mFailed to convert command: Api(
+    Deserialize(
+        "options[0]: missing field `required`",
+    ),
+)[0m
+[[38;5;196m2023-10-01 17:06:55.674171 +02:00[0m] [38;5;196mERROR[0m [client::manager::http] client\src\manager\http.rs:1091: [38;5;196mFailed to convert command: Api(
+    Deserialize(
+        "options[0]: missing field `required`",
+    ),
+)[0m
+[[38;5;196m2023-10-01 17:06:55.674269 +02:00[0m] [38;5;196mERROR[0m [client::manager::http] client\src\manager\http.rs:1091: [38;5;196mFailed to convert command: Api(
+    Deserialize(
+        "options[0]: missing field `required`",
+    ),
+)[0m
+[[38;5;196m2023-10-01 17:06:55.674356 +02:00[0m] [38;5;196mERROR[0m [client::manager::http] client\src\manager\http.rs:1091: [38;5;196mFailed to convert command: Api(
+    Deserialize(
+        "options[0]: missing field `required`",
+    ),
+)[0m
+[[38;5;196m2023-10-01 17:06:55.674433 +02:00[0m] [38;5;196mERROR[0m [client::manager::http] client\src\manager\http.rs:1091: [38;5;196mFailed to convert command: Api(
+    Deserialize(
+        "options[0]: missing field `required`",
+    ),
+)[0m
+[[38;5;208m2023-10-01 17:06:56.976049 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 2.891ms[0m
+[[38;5;196m2023-10-01 17:07:00.304008 +02:00[0m] [38;5;196mERROR[0m [client::manager::http] client\src\manager\http.rs:1023: [38;5;196mFailed to convert command: Api(
+    Deserialize(
+        "missing field `dm_permission`",
+    ),
+)[0m
+[[38;5;196m2023-10-01 17:07:00.304245 +02:00[0m] [38;5;196mERROR[0m [client::manager::http] client\src\manager\http.rs:1023: [38;5;196mFailed to convert command: Api(
+    Deserialize(
+        "missing field `dm_permission`",
+    ),
+)[0m
+[[38;5;196m2023-10-01 17:07:00.304355 +02:00[0m] [38;5;196mERROR[0m [client::manager::http] client\src\manager\http.rs:1023: [38;5;196mFailed to convert command: Api(
+    Deserialize(
+        "missing field `dm_permission`",
+    ),
+)[0m
+[[38;5;196m2023-10-01 17:07:00.304455 +02:00[0m] [38;5;196mERROR[0m [client::manager::http] client\src\manager\http.rs:1023: [38;5;196mFailed to convert command: Api(
+    Deserialize(
+        "missing field `dm_permission`",
+    ),
+)[0m
+[2023-10-01 17:07:00.304759 +02:00] INFO [core::application_commands_manager] core\src\application_commands_manager.rs:86: Creating all slash commands for Tools
+[[38;5;196m2023-10-01 17:07:00.844287 +02:00[0m] [38;5;196mERROR[0m [core::application_commands_manager] core\src\application_commands_manager.rs:99: [38;5;196mAn error occured while trying to create the command "cookies": Api(
+    Deserialize(
+        "options[0]: missing field `required`",
+    ),
+)[0m
+[[38;5;196m2023-10-01 17:07:01.059516 +02:00[0m] [38;5;196mERROR[0m [core::application_commands_manager] core\src\application_commands_manager.rs:99: [38;5;196mAn error occured while trying to create the command "guild_rank": Api(
+    Deserialize(
+        "options[0]: missing field `required`",
+    ),
+)[0m
+[[38;5;196m2023-10-01 17:07:01.310460 +02:00[0m] [38;5;196mERROR[0m [core::application_commands_manager] core\src\application_commands_manager.rs:99: [38;5;196mAn error occured while trying to create the command "top": Api(
+    Deserialize(
+        "options[0]: missing field `required`",
+    ),
+)[0m
+[2023-10-01 17:07:01.310686 +02:00] INFO [core::application_commands_manager] core\src\application_commands_manager.rs:86: Creating all slash commands for Dev
+[[38;5;208m2023-10-01 17:07:01.792830 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 2.685ms[0m
+[[38;5;208m2023-10-01 17:07:05.106249 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.37ms[0m
+[[38;5;208m2023-10-01 17:07:07.480040 +02:00[0m] [38;5;208mWARN[0m [client] client\src\lib.rs:574: [38;5;208mUnhandled gateway event received: "MESSAGE_UPDATE"[0m
+[[38;5;208m2023-10-01 17:07:08.983765 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.495ms[0m
+[2023-10-01 17:07:12.786460 +02:00] INFO [core::application_commands_manager] core\src\application_commands_manager.rs:86: Creating all slash commands for Fun
+[[38;5;208m2023-10-01 17:07:12.969303 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.501ms[0m
+[[38;5;208m2023-10-01 17:07:16.942969 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.538ms[0m
+[[38;5;208m2023-10-01 17:07:21.011314 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.462ms[0m
+[[38;5;208m2023-10-01 17:07:24.977176 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.5ms[0m
+[2023-10-01 17:07:29.015024 +02:00] INFO [core::application_commands_manager] core\src\application_commands_manager.rs:86: Creating all slash commands for Common
+[[38;5;208m2023-10-01 17:07:29.190755 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.288ms[0m
+[[38;5;208m2023-10-01 17:07:32.932795 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.542ms[0m
+[[38;5;196m2023-10-01 17:07:36.850041 +02:00[0m] [38;5;196mERROR[0m [core::application_commands_manager] core\src\application_commands_manager.rs:99: [38;5;196mAn error occured while trying to create the command "avatar": Api(
+    Deserialize(
+        "options[0]: missing field `required`",
+    ),
+)[0m
+[[38;5;208m2023-10-01 17:07:37.069455 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.408ms[0m
+[[38;5;196m2023-10-01 17:07:40.697888 +02:00[0m] [38;5;196mERROR[0m [core::application_commands_manager] core\src\application_commands_manager.rs:99: [38;5;196mAn error occured while trying to create the command "banner": Api(
+    Deserialize(
+        "options[0]: missing field `required`",
+    ),
+)[0m
+[[38;5;208m2023-10-01 17:08:34.400452 +02:00[0m] [38;5;208mWARN[0m [client] client\src\lib.rs:574: [38;5;208mUnhandled gateway event received: "MESSAGE_UPDATE"[0m

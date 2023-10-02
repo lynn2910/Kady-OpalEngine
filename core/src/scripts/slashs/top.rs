@@ -425,7 +425,6 @@ mod categories {
                     .fetch_optional(&pool.to_owned()).await
                 {
                     Ok(q) => {
-                        dbg!(&q);
                         q.map(|q| q.user_rank)
                     },
                     Err(e) => {

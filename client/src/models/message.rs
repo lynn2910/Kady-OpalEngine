@@ -3,14 +3,10 @@
 #![deny(clippy::unwrap_used)]
 #![deny(clippy::unwrap_used)]
 
-use std::str::FromStr;
-use chrono::{DateTime, TimeZone, Utc};
-use serde::{Serialize, Deserialize};
+use chrono::{DateTime, Utc};
+use serde::{Serialize, Deserialize, Deserializer};
 use serde_json::{json, Value};
-use error::{ModelError, Result};
-use error::Error::Model;
 use crate::manager::cache::UpdateCache;
-use crate::manager::http::HttpRessource;
 use crate::models::channel::{ChannelId, ChannelKind, Thread};
 use crate::models::components::message_components::Component;
 use crate::models::components::embed::Embed;
@@ -31,7 +27,7 @@ pub struct Message {
     pub author: User,
     pub content: Option<String>,
     /// When this message was sent
-    pub timestamp: DateTime<Utc>,
+    pub timestamp: Option<DateTime<Utc>>,
     /// When this message was edited
     pub edited_timestamp: Option<DateTime<Utc>>,
     /// Whether this message mentions everyone
@@ -44,20 +40,26 @@ pub struct Message {
     /// Channels specifically mentioned in this message
     ///
     /// Not all channel mentions in a message will appear in mention_channels.
-    /// Only textual channels that are visible to everyone in a lurkable guild will ever be included.
+    /// Only textual channels that are visible to everyone in a lurk-able guild will ever be included.
     pub mention_channels: Option<Vec<ChannelMention>>,
 
     /// Any attachments included in the message
+    #[serde(default)]
     pub attachments: Vec<Attachment>,
 
+    #[serde(default)]
     pub embeds: Vec<Embed>,
+    #[serde(default)]
     pub sticker_items: Vec<StickerItem>,
+    #[serde(default)]
     pub reactions: Vec<Reaction>,
+    #[serde(default)]
     pub components: Vec<Component>,
 
     pub pinned: bool,
     pub webhook_id: Option<Snowflake>,
     /// The type of message
+    #[serde(rename = "type")]
     pub kind: MessageType,
 
     pub application_id: Option<Snowflake>,
@@ -181,186 +183,11 @@ impl UpdateCache for Message {
     }
 }
 
-impl HttpRessource for Message {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let id = Snowflake::from_raw(raw["id"].clone(), shard)?;
-        let channel_id = ChannelId::from_raw(raw["channel_id"].clone(), shard)?;
-        let author = User::from_raw(raw["author"].clone(), shard)?;
-        let content = raw["content"].as_str().map(|s| s.to_string());
-        let timestamp = if let Some(ts) = raw["timestamp"].as_u64() {
-            match Utc.timestamp_millis_opt(ts as i64) {
-                chrono::LocalResult::Single(t) => t.with_timezone(&Utc),
-                _ => return Err(Model(ModelError::InvalidTimestamp(format!("Invalid timestamp: {}", ts))))
-            }
-        } else {
-            Utc::now()
-        };
-        let edited_timestamp: Option<DateTime<Utc>> = if let Some(ts) = raw["edited_timestamp"].as_str() {
-            match DateTime::from_str(ts) {
-                Ok(t) => Some(t),
-                Err(_) => return Err(Model(ModelError::InvalidTimestamp(format!("Invalid timestamp: {}", ts))))
-            }
-        } else {
-            None
-        };
-        let mention_everyone = raw["mention_everyone"].as_bool().unwrap_or(false);
-        let mentions = if let Some(raw_mentions) = raw["mentions"].as_array() {
-            let mut mentions: Vec<User> = Vec::new();
-            for mention in raw_mentions.iter() {
-                if let Ok(mention) = User::from_raw(mention.clone(), shard) {
-                    mentions.push(mention);
-                }
-            };
-            mentions
-        } else {
-            Vec::new()
-        };
-        let mention_channels = if let Some(raw_mention_channels) = raw["mention_channels"].as_array() {
-            let mut mention_channels: Vec<ChannelMention> = Vec::new();
-            for mention_channel in raw_mention_channels.iter() {
-                if let Ok(mention_channel) = ChannelMention::from_raw(mention_channel.clone(), shard) {
-                    mention_channels.push(mention_channel);
-                }
-            };
-            Some(mention_channels)
-        } else {
-            None
-        };
-        let attachments = if let Some(raw_attachments) = raw["attachments"].as_array() {
-            let mut attachments: Vec<Attachment> = Vec::new();
-            for attachment in raw_attachments.iter() {
-                if let Ok(attachment) = Attachment::from_raw(attachment.clone(), shard) {
-                    attachments.push(attachment);
-                }
-            };
-            attachments
-        } else {
-            Vec::new()
-        };
-        let embeds = if let Some(raw_embeds) = raw["embeds"].as_array() {
-            let mut embeds: Vec<Embed> = Vec::new();
-            for embed in raw_embeds.iter() {
-                if let Ok(embed) = Embed::from_raw(embed.clone(), shard) {
-                    embeds.push(embed);
-                }
-            };
-            embeds
-        } else {
-            Vec::new()
-        };
-        let components = if let Some(components) = raw.get("components") {
-            if let Some(raw_components) = components.as_array() {
-                let mut components = Vec::new();
-                for component in raw_components.iter() {
-                    if let Ok(component) = Component::from_raw(component.clone(), shard) {
-                        components.push(component);
-                    }
-                };
-                components
-            } else {
-                Vec::new()
-            }
-        } else {
-            Vec::new()
-        };
-
-        let sticker_items = if let Some(sticker_items) = raw.get("sticker_items") {
-            if let Some(sticker_items) = sticker_items.as_array() {
-                let mut stickers = Vec::new();
-                for sticker in sticker_items.iter() {
-                    if let Ok(sticker) = StickerItem::from_raw(sticker.clone(), shard) {
-                        stickers.push(sticker);
-                    }
-                };
-                stickers
-            } else {
-                Vec::new()
-            }
-        } else {
-            Vec::new()
-        };
-
-        let reactions = if let Some(reactions) = raw.get("reactions") {
-            if let Some(raw_reactions) = reactions.as_array() {
-                let mut reactions = Vec::new();
-                for reaction in raw_reactions.iter() {
-                    if let Ok(reaction) = Reaction::from_raw(reaction.clone(), shard) {
-                        reactions.push(reaction);
-                    }
-                };
-                reactions
-            } else {
-                Vec::new()
-            }
-        } else {
-            Vec::new()
-        };
-
-        let pinned = raw["pinned"].as_bool().unwrap_or(false);
-        let webhook_id = Snowflake::from_raw(raw["webhook_id"].clone(), shard).ok();
-        let kind = if let Some(kind) = raw.get("type") { MessageType::from_raw(kind.clone(), shard)? } else { return Err(Model(ModelError::InvalidPayload("Message".to_string()))); };
-        let application_id = Snowflake::from_raw(raw["application_id"].clone(), shard).ok();
-        let message_reference = if let Some(message_reference) = raw.get("message_reference") {
-            MessageReference::from_raw(message_reference.clone(), shard).ok()
-        } else {
-            None
-        };
-        let flags = raw["flags"].as_u64();
-        let referenced_message = if let Some(referenced_message) = raw.get("referenced_message") {
-            Message::from_raw(referenced_message.clone(), shard).ok().map(Box::new)
-        } else {
-            None
-        };
-        let interaction = if let Some(interaction) = raw.get("interaction") {
-            MessageInteraction::from_raw(interaction.clone(), shard).ok()
-        } else {
-            None
-        };
-        // TODO
-        let thread = None; // views["thread"].as_object().map(|o| Thread::from_raw(o.clone()).unwrap());
-
-        let position = raw["position"].as_u64();
-        let role_subscription_data = if let Some(role_subscription_data) = raw.get("role_subscription_data") {
-            RoleSubscription::from_raw(role_subscription_data.clone(), shard).ok()
-        } else {
-            None
-        };
-
-        Ok(Self {
-            id,
-            channel_id,
-            author,
-            content,
-            timestamp,
-            edited_timestamp,
-            mention_everyone,
-            mentions,
-            mention_channels,
-            attachments,
-            embeds,
-            sticker_items,
-            reactions,
-            components,
-            pinned,
-            webhook_id,
-            kind,
-            application_id,
-            message_reference,
-            flags,
-            referenced_message,
-            interaction,
-            thread,
-            position,
-            role_subscription_data
-        })
-    }
-}
-
 /// Represents the type of a message
 ///
 /// Reference:
 /// - [Message Types](https://discord.com/developers/docs/resources/channel#message-object-message-types)
-#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Clone, Serialize, Eq, PartialEq)]
 pub enum MessageType {
     Default = 0,
     RecipientAdd = 1,
@@ -395,41 +222,43 @@ pub enum MessageType {
     GuildApplicationPremiumSubscription = 32,
 }
 
-impl HttpRessource for MessageType {
-    fn from_raw(raw: Value, _shard: Option<u64>) -> Result<Self> {
-        match raw.as_u64() {
-            Some(0) => Ok(Self::Default),
-            Some(1) => Ok(Self::RecipientAdd),
-            Some(2) => Ok(Self::RecipientRemove),
-            Some(3) => Ok(Self::Call),
-            Some(4) => Ok(Self::ChannelNameChange),
-            Some(5) => Ok(Self::ChannelIconChange),
-            Some(6) => Ok(Self::ChannelPinnedMessage),
-            Some(7) => Ok(Self::UserJoin),
-            Some(8) => Ok(Self::GuildBoost),
-            Some(9) => Ok(Self::GuildBoostTier1),
-            Some(10) => Ok(Self::GuildBoostTier2),
-            Some(11) => Ok(Self::GuildBoostTier3),
-            Some(12) => Ok(Self::ChannelFollowAdd),
-            Some(14) => Ok(Self::GuildDiscoveryDisqualified),
-            Some(15) => Ok(Self::GuildDiscoveryReQualified),
-            Some(16) => Ok(Self::GuildDiscoveryGracePeriodInitialWarning),
-            Some(17) => Ok(Self::GuildDiscoveryGracePeriodFinalWarning),
-            Some(18) => Ok(Self::ThreadCreated),
-            Some(19) => Ok(Self::Reply),
-            Some(20) => Ok(Self::ChatInputCommand),
-            Some(21) => Ok(Self::ThreadStarterMessage),
-            Some(22) => Ok(Self::GuildInviteReminder),
-            Some(23) => Ok(Self::ContextMenuCommand),
-            Some(24) => Ok(Self::AutoModerationAction),
-            Some(25) => Ok(Self::RoleSubscriptionPurchase),
-            Some(26) => Ok(Self::InteractionPremiumUpSell),
-            Some(27) => Ok(Self::StageStart),
-            Some(28) => Ok(Self::StageEnd),
-            Some(29) => Ok(Self::StageSpeaker),
-            Some(31) => Ok(Self::StageTopic),
-            Some(32) => Ok(Self::GuildApplicationPremiumSubscription),
-            _ => Err(Model(ModelError::InvalidPayload("Invalid message type".to_owned()))),
+impl<'de> Deserialize<'de> for MessageType {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
+        let value: u64 = Deserialize::deserialize(deserializer)?;
+
+        match value {
+            0 => Ok(Self::Default),
+            1 => Ok(Self::RecipientAdd),
+            2 => Ok(Self::RecipientRemove),
+            3 => Ok(Self::Call),
+            4 => Ok(Self::ChannelNameChange),
+            5 => Ok(Self::ChannelIconChange),
+            6 => Ok(Self::ChannelPinnedMessage),
+            7 => Ok(Self::UserJoin),
+            8 => Ok(Self::GuildBoost),
+            9 => Ok(Self::GuildBoostTier1),
+            10 => Ok(Self::GuildBoostTier2),
+            11 => Ok(Self::GuildBoostTier3),
+            12 => Ok(Self::ChannelFollowAdd),
+            14 => Ok(Self::GuildDiscoveryDisqualified),
+            15 => Ok(Self::GuildDiscoveryReQualified),
+            16 => Ok(Self::GuildDiscoveryGracePeriodInitialWarning),
+            17 => Ok(Self::GuildDiscoveryGracePeriodFinalWarning),
+            18 => Ok(Self::ThreadCreated),
+            19 => Ok(Self::Reply),
+            20 => Ok(Self::ChatInputCommand),
+            21 => Ok(Self::ThreadStarterMessage),
+            22 => Ok(Self::GuildInviteReminder),
+            23 => Ok(Self::ContextMenuCommand),
+            24 => Ok(Self::AutoModerationAction),
+            25 => Ok(Self::RoleSubscriptionPurchase),
+            26 => Ok(Self::InteractionPremiumUpSell),
+            27 => Ok(Self::StageStart),
+            28 => Ok(Self::StageEnd),
+            29 => Ok(Self::StageSpeaker),
+            31 => Ok(Self::StageTopic),
+            32 => Ok(Self::GuildApplicationPremiumSubscription),
+            _ => Err(serde::de::Error::custom(format!("unknown value: {}", value)))
         }
     }
 }
@@ -444,22 +273,6 @@ pub struct ChannelMention {
     pub guild_id: Snowflake,
     pub channel_type: ChannelKind,
     pub name: String,
-}
-
-impl HttpRessource for ChannelMention {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let id = Snowflake::from_raw(raw["id"].clone(), shard)?;
-        let guild_id = Snowflake::from_raw(raw["guild_id"].clone(), shard)?;
-        let channel_type = ChannelKind::from_raw(raw["type"].clone(), shard)?;
-        let name = if let Some(name) = raw["name"].as_str() { name } else { return Err(Model(ModelError::MissingField("Field 'name' is missing for the channel mention".into()))); }.to_owned();
-
-        Ok(Self {
-            id,
-            guild_id,
-            channel_type,
-            name,
-        })
-    }
 }
 
 /// Represents an attachment in a message
@@ -523,36 +336,6 @@ impl UpdateCache for Attachment {
     }
 }
 
-impl HttpRessource for Attachment {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let id = Snowflake::from_raw(raw["id"].clone(), shard)?;
-        let filename = if let Some(filename) = raw["filename"].as_str() { filename } else { return Err(Model(ModelError::MissingField("Field 'filename' is missing for the attachment".into()))); };
-        let description = raw["description"].as_str().map(|s| s.to_owned());
-        let content_type = if let Some(content_type) = raw["content_type"].as_str() { content_type } else { return Err(Model(ModelError::MissingField("Field 'content_type' is missing for the attachment".into()))); };
-        let size = if let Some(size) = raw["size"].as_u64() { size } else { return Err(Model(ModelError::MissingField("Field 'size' is missing for the attachment".into()))); };
-        let url = if let Some(url) = raw["url"].as_str() { url } else { return Err(Model(ModelError::MissingField("Field 'url' is missing for the attachment".into()))); };
-        let proxy_url = if let Some(proxy_url) = raw["proxy_url"].as_str() { proxy_url } else { return Err(Model(ModelError::MissingField("Field 'proxy_url' is missing for the attachment".into()))); };
-        let height = raw["height"].as_u64();
-        let width = raw["width"].as_u64();
-        let ephemeral = raw["ephemeral"].as_bool();
-        let durations_seconds = raw["durations_seconds"].as_u64();
-
-        Ok(Self {
-            id,
-            filename: filename.to_owned(),
-            description,
-            content_type: content_type.to_owned(),
-            size,
-            url: url.to_owned(),
-            proxy_url: proxy_url.to_owned(),
-            height,
-            width,
-            ephemeral,
-            durations_seconds,
-        })
-    }
-}
-
 /// Represents a reference to a message
 ///
 /// Reference:
@@ -582,22 +365,6 @@ impl UpdateCache for MessageReference {
     }
 }
 
-impl HttpRessource for MessageReference {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let message_id = if let Some(message_id) = raw.get("message_id") { Some(Snowflake::from_raw(message_id.clone(), shard)?) } else { None };
-        let channel_id = Snowflake::from_raw(raw["channel_id"].clone(), shard)?;
-        let guild_id = if let Some(guild_id) = raw.get("guild_id") { Some(Snowflake::from_raw(guild_id.clone(), shard)?) } else { None };
-        let fail_if_not_exists = raw["fail_if_not_exists"].as_bool();
-
-        Ok(Self {
-            message_id,
-            channel_id,
-            guild_id,
-            fail_if_not_exists,
-        })
-    }
-}
-
 /// If the message is a response to an Interaction, this is the id of the interaction's application
 ///
 /// Reference:
@@ -605,6 +372,7 @@ impl HttpRessource for MessageReference {
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct MessageInteraction {
     pub id: Snowflake,
+    #[serde(rename = "type")]
     pub kind: InteractionType,
     pub name: String,
     pub user: User,
@@ -624,22 +392,6 @@ impl UpdateCache for MessageInteraction {
         if self.user != from.user {
             self.user = from.user.clone();
         }
-    }
-}
-
-impl HttpRessource for MessageInteraction {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let id = Snowflake::from_raw(raw["id"].clone(), shard)?;
-        let kind = if let Some(kind) = raw.get("type") { InteractionType::from_raw(kind.clone(), shard)? } else { return Err(Model(ModelError::MissingField("Field 'type' is missing for the message interaction".into()))); };
-        let name = if let Some(name) = raw["name"].as_str() { name } else { return Err(Model(ModelError::MissingField("Field 'name' is missing for the message interaction".into()))); };
-        let user = if let Some(user) = raw.get("user") { User::from_raw(user.clone(), shard)? } else { return Err(Model(ModelError::MissingField("Field 'user' is missing for the message interaction".into()))); };
-
-        Ok(Self {
-            id,
-            kind,
-            name: name.to_owned(),
-            user,
-        })
     }
 }
 
@@ -672,27 +424,11 @@ impl UpdateCache for RoleSubscription {
     }
 }
 
-impl HttpRessource for RoleSubscription {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let tier_name = if let Some(tier_name) = raw["tier_name"].as_str() { tier_name } else { return Err(Model(ModelError::MissingField("Field 'tier_name' is missing for the role subscription".into()))); };
-        let role_subscription_listing_id = Snowflake::from_raw(raw["role_subscription_listing_id"].clone(), shard)?;
-        let total_months_subscribed = if let Some(total_months_subscribed) = raw["total_months_subscribed"].as_u64() { total_months_subscribed } else { return Err(Model(ModelError::MissingField("Field 'total_months_subscribed' is missing for the role subscription".into()))); };
-        let is_renewal = if let Some(is_renewal) = raw["is_renewal"].as_bool() { is_renewal } else { return Err(Model(ModelError::MissingField("Field 'is_renewal' is missing for the role subscription".into()))); };
-
-        Ok(Self {
-            tier_name: tier_name.to_owned(),
-            role_subscription_listing_id,
-            total_months_subscribed,
-            is_renewal,
-        })
-    }
-}
-
 /// Represent a sticker item in a message
 ///
 /// Reference:
-/// - [Sticker Item Structure](https://discord.com/developers/docs/resources/channel#message-object-message-sticker-item-structure)
-/// - [Sticker Format Type](https://discord.com/developers/docs/resources/channel#message-object-message-sticker-format-types)
+/// - [Sticker Item Structure](https://discord.com/developers/docs/resources/sticker#sticker-resource)
+/// - [Sticker Format Type](https://discord.com/developers/docs/resources/sticker#sticker-object-sticker-types)
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct StickerItem {
     pub id: Snowflake,
@@ -711,20 +447,6 @@ impl UpdateCache for StickerItem {
         if self.format_type != from.format_type {
             self.format_type = from.format_type.clone();
         }
-    }
-}
-
-impl HttpRessource for StickerItem {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let id = Snowflake::from_raw(raw["id"].clone(), shard)?;
-        let name = if let Some(name) = raw["name"].as_str() { name } else { return Err(Model(ModelError::MissingField("Field 'name' is missing for the sticker item".into()))); };
-        let format_type = if let Some(format_type) = raw.get("format_type") { StickerFormatType::from_raw(format_type.clone(), shard)? } else { return Err(Model(ModelError::MissingField("Field 'format_type' is missing for the sticker item".into()))); };
-
-        Ok(Self {
-            id,
-            name: name.to_owned(),
-            format_type,
-        })
     }
 }
 
@@ -757,23 +479,9 @@ impl UpdateCache for Reaction {
     }
 }
 
-impl HttpRessource for Reaction {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let count = if let Some(count) = raw["count"].as_u64() { count } else { return Err(Model(ModelError::MissingField("Field 'count' is missing for the reaction".into()))); };
-        let me = if let Some(me) = raw["me"].as_bool() { me } else { return Err(Model(ModelError::MissingField("Field 'me' is missing for the reaction".into()))); };
-        let emoji = Emoji::from_raw(raw["emoji"].clone(), shard)?;
-
-        Ok(Self {
-            count,
-            me,
-            emoji,
-        })
-    }
-}
 
 
-
-#[derive(Debug)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct MessageBuilder {
     pub content: Option<String>,
     pub embeds: Vec<Embed>,
@@ -787,23 +495,6 @@ pub struct MessageBuilder {
     pub title: Option<String>,
     /// Only for Modal Interactions
     pub custom_id: Option<String>
-}
-
-impl Default for MessageBuilder {
-    fn default() -> Self {
-        Self {
-            content: None,
-            embeds: Vec::new(),
-            components: Vec::new(),
-            allowed_mentions: None,
-            attachments: Vec::new(),
-            reference: None,
-            ephemeral: false,
-            flags: MessageFlags::new(),
-            title: None,
-            custom_id: None
-        }
-    }
 }
 
 impl MessageBuilder {
@@ -949,12 +640,7 @@ pub struct MessageAttachmentBuilder {
 
 impl MessageAttachmentBuilder {
     pub(crate) fn to_json(&self) -> Value {
-        json!({
-            "description": self.description,
-            "name": self.name,
-            "content_type": self.content_type,
-            "id": self.id
-        })
+        serde_json::to_value(self).unwrap_or(Value::Null)
     }
 }
 
@@ -973,7 +659,7 @@ pub struct AttachmentBuilder {
 
 
 /// Represent the flags of a message
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct MessageFlags(pub u64);
 
 /// Contain every message flags possible

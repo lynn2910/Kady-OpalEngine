@@ -1,0 +1,95 @@
+[2023-10-01 13:30:15.017638 +02:00] INFO [client] client\src\lib.rs:325: Event handler registered
+[2023-10-01 13:30:15.018589 +02:00] INFO [api] api\src\lib.rs:45: API is listening on 0.0.0.0:9090
+[2023-10-01 13:30:15.869207 +02:00] INFO [core] core\src\main.rs:254: Client started
+[2023-10-01 13:30:16.109660 +02:00] INFO [core] core\src\main.rs:39: Shard 0 ready
+[2023-10-01 13:30:16.109736 +02:00] INFO [core] core\src\main.rs:46: Connected as Luna Beta
+[2023-10-01 13:31:06.669831 +02:00] INFO [core::tasks] core\src\tasks.rs:118: Retrieving memory usage of the application
+[2023-10-01 13:31:06.669911 +02:00] INFO [core::tasks] core\src\tasks.rs:124: Collecting cache informations...
+[2023-10-01 13:31:06.669952 +02:00] INFO [core::tasks] core\src\tasks.rs:156: Collecting shard manager informations...
+[2023-10-01 13:31:06.670028 +02:00] INFO [core::tasks] core\src\tasks.rs:172: The global usage of the Shard Manager & Cache Manager is '0.4921875' kb.
+[2023-10-01 13:31:06.670112 +02:00] INFO [core::tasks] core\src\tasks.rs:173: Report:
+MemoryReport {
+    cache: CacheMemoryReport {
+        channels: 0.0,
+        guilds: 0.0,
+        users: 0.0,
+        application: 0.0,
+        client_user: 0.0,
+        cache_total: 0.0,
+    },
+    shards: ShardMemoryReport {
+        shards: {
+            0: 0.0859375,
+        },
+        total: 0.0859375,
+    },
+    unit: "kb",
+    total: 0.4921875,
+}
+[2023-10-01 13:31:06.671168 +02:00] INFO [core::tasks] core\src\tasks.rs:223: Success of the operation
+[[38;5;208m2023-10-01 13:31:06.880459 +02:00[0m] [38;5;208mWARN[0m [client] client\src\lib.rs:574: [38;5;208mUnhandled gateway event received: "MESSAGE_UPDATE"[0m
+[[38;5;208m2023-10-01 13:31:16.163685 +02:00[0m] [38;5;208mWARN[0m [client] client\src\lib.rs:431: [38;5;208mFailed to parse message create event: Error {
+    path: Path {
+        segments: [
+            Map {
+                key: "embeds",
+            },
+            Seq {
+                index: 0,
+            },
+        ],
+    },
+    original: Error("missing field `timestamp`", line: 0, column: 0),
+}[0m
+[2023-10-01 13:31:23.605297 +02:00] INFO [core::tasks] core\src\tasks.rs:118: Retrieving memory usage of the application
+[2023-10-01 13:31:23.605401 +02:00] INFO [core::tasks] core\src\tasks.rs:124: Collecting cache informations...
+[2023-10-01 13:31:23.605445 +02:00] INFO [core::tasks] core\src\tasks.rs:156: Collecting shard manager informations...
+[2023-10-01 13:31:23.605508 +02:00] INFO [core::tasks] core\src\tasks.rs:172: The global usage of the Shard Manager & Cache Manager is '0.4921875' kb.
+[2023-10-01 13:31:23.605563 +02:00] INFO [core::tasks] core\src\tasks.rs:173: Report:
+MemoryReport {
+    cache: CacheMemoryReport {
+        channels: 0.0,
+        guilds: 0.0,
+        users: 0.0,
+        application: 0.0,
+        client_user: 0.0,
+        cache_total: 0.0,
+    },
+    shards: ShardMemoryReport {
+        shards: {
+            0: 0.0859375,
+        },
+        total: 0.0859375,
+    },
+    unit: "kb",
+    total: 0.4921875,
+}
+[2023-10-01 13:31:23.606698 +02:00] INFO [core::tasks] core\src\tasks.rs:223: Success of the operation
+[[38;5;208m2023-10-01 13:31:23.840181 +02:00[0m] [38;5;208mWARN[0m [client] client\src\lib.rs:574: [38;5;208mUnhandled gateway event received: "MESSAGE_UPDATE"[0m
+[[38;5;208m2023-10-01 14:23:50.689449 +02:00[0m] [38;5;208mWARN[0m [client] client\src\lib.rs:347: [38;5;208mNo event name received[0m
+[[38;5;208m2023-10-01 14:24:00.689049 +02:00[0m] [38;5;208mWARN[0m [client::manager::shard] client\src\manager\shard.rs:287: [38;5;208mWebsocket for shard 0 is closing
+    code: Some(Away)
+    reason: "Discord WebSocket requesting client reconnect."[0m
+[2023-10-01 14:24:00.834162 +02:00] INFO [client] client\src\lib.rs:213: Clearing old shard 0
+[2023-10-01 14:24:01.355335 +02:00] INFO [core] core\src\main.rs:39: Shard 0 ready
+[2023-10-01 14:24:01.355444 +02:00] INFO [core] core\src\main.rs:46: Connected as Luna Beta
+[[38;5;208m2023-10-01 15:24:24.810288 +02:00[0m] [38;5;208mWARN[0m [client] client\src\lib.rs:574: [38;5;208mUnhandled gateway event received: "MESSAGE_UPDATE"[0m
+[[38;5;208m2023-10-01 15:24:24.851869 +02:00[0m] [38;5;208mWARN[0m [client] client\src\lib.rs:574: [38;5;208mUnhandled gateway event received: "CHANNEL_PINS_UPDATE"[0m
+[[38;5;196m2023-10-01 16:17:41.085948 +02:00[0m] [38;5;196mERROR[0m [client::manager::shard] client\src\manager\shard.rs:257: [38;5;196mError while reading message: Io(Os { code: 10054, kind: ConnectionReset, message: "Une connexion existante a dû être fermée par l’hôte distant." })[0m
+[2023-10-01 16:17:41.486704 +02:00] INFO [client] client\src\lib.rs:213: Clearing old shard 0
+[2023-10-01 16:17:42.156238 +02:00] INFO [core] core\src\main.rs:39: Shard 0 ready
+[2023-10-01 16:17:42.156275 +02:00] INFO [core] core\src\main.rs:46: Connected as Luna Beta
+[[38;5;208m2023-10-01 16:20:19.757385 +02:00[0m] [38;5;208mWARN[0m [client] client\src\lib.rs:574: [38;5;208mUnhandled gateway event received: "MESSAGE_UPDATE"[0m
+[[38;5;208m2023-10-01 16:21:04.564196 +02:00[0m] [38;5;208mWARN[0m [client] client\src\lib.rs:431: [38;5;208mFailed to parse message create event: Error {
+    path: Path {
+        segments: [
+            Map {
+                key: "embeds",
+            },
+            Seq {
+                index: 0,
+            },
+        ],
+    },
+    original: Error("missing field `timestamp`", line: 0, column: 0),
+}[0m

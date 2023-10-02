@@ -1,12 +1,10 @@
 use std::collections::HashMap;
 use std::fmt::Display;
 use chrono::{DateTime, Utc};
-use log::error;
 use serde::{Serialize, Deserialize};
-use serde_json::Value;
-use error::{Result, Error, EventError, ModelError, RuntimeError};
+use error::{Result, Error, EventError, RuntimeError};
 use crate::manager::cache::UpdateCache;
-use crate::manager::http::{ApiResult, Http, HttpRessource};
+use crate::manager::http::{ApiResult, Http};
 use crate::models::Snowflake;
 use crate::models::user::{User, UserId};
 
@@ -41,15 +39,6 @@ impl Display for GuildId {
     }
 }
 
-impl HttpRessource for GuildId {
-    fn from_raw(raw: Value, _shard: Option<u64>) -> Result<Self> {
-        match raw.as_str() {
-            Some(snowflake) => Ok(Self(snowflake.into())),
-            None => Err(Error::Model(ModelError::InvalidPayload("Failed to parse guild id".into())))
-        }
-    }
-}
-
 /// Represents a guild that the client is in
 ///
 /// Reference:
@@ -59,6 +48,7 @@ pub struct Guild {
     /// The guild id
     pub id: GuildId,
     /// The approximate number of members in this guild
+    #[serde(default)]
     pub member_count: u64,
     /// The name of the guild
     pub name: String,
@@ -77,13 +67,16 @@ pub struct Guild {
     /// The default message notification level of the guild
     pub default_message_notifications: u64,
     /// The features of the guild
+    #[serde(default)]
     pub features: Vec<String>,
     /// The system channel id of the guild
     pub system_channel_id: Option<String>,
     /// The list of members in the guild
+    #[serde(default)]
     pub members: HashMap<UserId, GuildMember>,
     /// The list of roles in the guild
-    pub roles: HashMap<Snowflake, Role>,
+    #[serde(default)]
+    pub roles: Vec<Role>,
 
     /// The shard id
     pub shard: Option<u64>,
@@ -113,48 +106,13 @@ impl UpdateCache for Guild {
         }
 
         // update roles
-        for (id, role) in from.roles.iter() {
-            if !self.roles.contains_key(id) {
-                self.roles.insert(id.clone(), role.clone());
-            } else if let Some(cache_role) = self.roles.get_mut(id) {
+        for role in from.roles.iter() {
+            if !self.roles.contains(role) {
+                self.roles.push(role.clone());
+            } else if let Some(cache_role) = self.roles.iter_mut().find(|r| r.id == role.id) {
                 cache_role.update(role);
             }
         }
-    }
-}
-
-impl HttpRessource for Guild {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let id = if let Some(id) = raw["id"].as_str() { id.into() } else { return Err(Error::Event(EventError::MissingField("The field 'id' is missing".to_string()))); };
-        let member_count = if let Some(member_count) = raw["member_count"].as_u64() { member_count } else { 0 };
-        let name = if let Some(name) = raw["name"].as_str() { name.to_string() } else { return Err(Error::Event(EventError::MissingField("The field 'name' is missing".to_string()))); };
-        let icon = raw["icon"].as_str().map(|s| s.to_string());
-        let owner_id = if let Some(owner_id) = raw["owner_id"].as_str() { owner_id.to_string() } else { return Err(Error::Event(EventError::MissingField("The field 'owner_id' is missing".to_string()))); };
-        let permissions = raw["permissions"].as_u64();
-        let afk_channel_id = raw["afk_channel_id"].as_str().map(|s| s.to_string());
-        let afk_timeout = if let Some(afk_timeout) = raw["afk_timeout"].as_u64() { afk_timeout } else { return Err(Error::Event(EventError::MissingField("The field 'afk_timeout' is missing".to_string()))); };
-        let verification_level = if let Some(verification_level) = raw["verification_level"].as_u64() { verification_level } else { return Err(Error::Event(EventError::MissingField("The field 'verification_level' is missing".to_string()))); };
-        let default_message_notifications = if let Some(default_message_notifications) = raw["default_message_notifications"].as_u64() { default_message_notifications } else { return Err(Error::Event(EventError::MissingField("The field 'default_message_notifications' is missing".to_string()))); };
-        let features = if let Some(features) = raw["features"].as_array() { features.iter().map(|v| v.as_str().unwrap().to_string()).collect() } else { return Err(Error::Event(EventError::MissingField("The field 'features' is missing".to_string()))); };
-        let system_channel_id = raw["system_channel_id"].as_str().map(|s| s.to_string());
-
-        Ok(Self {
-            id,
-            member_count,
-            name,
-            icon,
-            owner_id,
-            permissions,
-            afk_channel_id,
-            afk_timeout,
-            verification_level,
-            default_message_notifications,
-            features,
-            system_channel_id,
-            shard,
-            members: HashMap::new(),
-            roles: HashMap::new(),
-        })
     }
 }
 
@@ -181,17 +139,10 @@ impl Guild {
 }
 
 /// Represents an unavailable guild that the client is in
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct UnavailableGuild {
     pub id: GuildId,
     pub shard: Option<u64>
-}
-
-impl HttpRessource for UnavailableGuild {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let id = if let Some(id) = raw["id"].as_str() { id.into() } else { return Err(Error::Event(EventError::MissingField("The field 'id' is missing".to_string()))); };
-
-        Ok(Self { id, shard })
-    }
 }
 
 
@@ -235,53 +186,6 @@ impl UpdateCache for GuildMember {
         if self.pending != from.pending { self.pending = from.pending; }
         if self.permissions != from.permissions { self.permissions = from.permissions.clone(); }
         if self.communication_disabled_until != from.communication_disabled_until { self.communication_disabled_until = from.communication_disabled_until; }
-    }
-}
-
-impl HttpRessource for GuildMember {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let guild_id = if let Some(guild_id) = raw.get("guild_id") { Some(GuildId::from_raw(guild_id.clone(), shard)?) } else { None };
-        let user = if let Some(user) = raw["user"].as_object() { Some(User::from_raw(Value::Object(user.clone()), shard)?) } else { None };
-        let nickname = raw["nick"].as_str().map(|s| s.to_string());
-        let avatar = raw["avatar"].as_str().map(|s| s.to_string());
-        let joined_at = if let Some(joined_at) = raw["joined_at"].as_str() { DateTime::parse_from_rfc3339(joined_at).unwrap().with_timezone(&Utc) } else { return Err(Error::Event(EventError::MissingField("The field 'joined_at' is missing".to_string()))); };
-        let premium_since = raw["premium_since"].as_str().map(|s| DateTime::parse_from_rfc3339(s).unwrap().with_timezone(&Utc));
-        let flags = if let Some(flags) = raw["flags"].as_u64() { flags } else { return Err(Error::Event(EventError::MissingField("The field 'flags' is missing".to_string()))); };
-        let pending = if let Some(pending) = raw["pending"].as_bool() { pending } else { return Err(Error::Event(EventError::MissingField("The field 'pending' is missing".to_string()))); };
-        let permissions = raw["permissions"].as_str().map(|s| s.to_string());
-        let communication_disabled_until = raw["communication_disabled_until"].as_str().map(|s| DateTime::parse_from_rfc3339(s).unwrap().with_timezone(&Utc));
-        let roles = if let Some(roles) = raw.get("roles") {
-            if let Some(roles) = roles.as_array() {
-                let mut collected_roles = Vec::new();
-
-                for raw_role in roles.iter() {
-                    match Snowflake::from_raw(raw_role.clone(), shard) {
-                        Ok(r) => collected_roles.push(r),
-                        Err(e) => { error!(target: "Conversion", "Cannot convert a role while treating a GuildMember JSON: {e:#?}"); }
-                    };
-                }
-
-                collected_roles
-            } else {
-                return Err(Error::Event(EventError::MissingField("The field 'roles' is missing".to_string())));
-            }
-        } else {
-            return Err(Error::Event(EventError::MissingField("The field 'roles' is missing".to_string())));
-        };
-
-        Ok(Self {
-            user,
-            nickname,
-            avatar,
-            joined_at,
-            premium_since,
-            flags,
-            pending,
-            permissions,
-            communication_disabled_until,
-            roles,
-            guild_id: guild_id.clone(),
-        })
     }
 }
 
@@ -388,36 +292,6 @@ impl UpdateCache for Role {
     }
 }
 
-impl HttpRessource for Role {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let id = if let Some(id) = raw["id"].as_str() { id.into() } else { return Err(Error::Event(EventError::MissingField(format!("The field 'id' is missing from the role's JSON, raw: {raw:#?}")))); };
-        let name = if let Some(name) = raw["name"].as_str() { name.to_string() } else { return Err(Error::Event(EventError::MissingField(format!("The field 'name' is missing from the role's JSON, raw: {raw:#?}")))); };
-        let color = if let Some(color) = raw["color"].as_u64() { color } else { return Err(Error::Event(EventError::MissingField(format!("The field 'color' is missing from the role's JSON, raw: {raw:#?}")))); };
-        let hoist = if let Some(hoist) = raw["hoist"].as_bool() { hoist } else { return Err(Error::Event(EventError::MissingField(format!("The field 'hoist' is missing from the role's JSON, raw: {raw:#?}")))); };
-        let icon = raw["icon"].as_str().map(|s| s.to_string());
-        let unicode_emoji = raw["unicode_emoji"].as_str().map(|s| s.to_string());
-        let position = if let Some(position) = raw["position"].as_u64() { position } else { return Err(Error::Event(EventError::MissingField(format!("The field 'position' is missing from the role's JSON, raw: {raw:#?}")))); };
-        let permissions = if let Some(permissions) = raw["permissions"].as_str() { permissions.to_string() } else { return Err(Error::Event(EventError::MissingField(format!("The field 'permissions' is missing from the role's JSON, raw: {raw:#?}")))); };
-        let managed = if let Some(managed) = raw["managed"].as_bool() { managed } else { return Err(Error::Event(EventError::MissingField(format!("The field 'managed' is missing from the role's JSON, raw: {raw:#?}")))); };
-        let mentionable = if let Some(mentionable) = raw["mentionable"].as_bool() { mentionable } else { return Err(Error::Event(EventError::MissingField(format!("The field 'mentionable' is missing from the role's JSON, raw: {raw:#?}")))); };
-        let tags = if let Some(tags) = raw.get("tags") { Some(RoleTags::from_raw(tags.clone(), shard)?) } else { None };
-
-        Ok(Self {
-            id,
-            name,
-            color,
-            hoist,
-            icon,
-            unicode_emoji,
-            position,
-            permissions,
-            managed,
-            mentionable,
-            tags
-        })
-    }
-}
-
 /// Represents the tags a role has
 ///
 /// Reference:
@@ -446,25 +320,5 @@ impl UpdateCache for RoleTags {
         if self.subscription_listing_id != from.subscription_listing_id { self.subscription_listing_id = from.subscription_listing_id.clone(); }
         if self.available_for_purchase != from.available_for_purchase { self.available_for_purchase = from.available_for_purchase; }
         if self.guild_connection != from.guild_connection { self.guild_connection = from.guild_connection; }
-    }
-}
-
-impl HttpRessource for RoleTags {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let bot_id = if let Some(bot_id) = raw.get("bot_id") { Some(Snowflake::from_raw(bot_id.clone(), shard)?) } else { None };
-        let integration_id = if let Some(integration_id) = raw.get("integration_id") { Some(Snowflake::from_raw(integration_id.clone(), shard)?) } else { None };
-        let premium_subscriber = if raw.get("premium_subscriber").is_some() { Some(()) } else { None };
-        let subscription_listing_id = if let Some(subscription_listing_id) = raw.get("subscription_listing_id") { Some(Snowflake::from_raw(subscription_listing_id.clone(), shard)?) } else { None };
-        let available_for_purchase = if raw.get("available_for_purchase").is_some() { Some(()) } else { None };
-        let guild_connection = if raw.get("guild_connection").is_some() { Some(()) } else { None };
-
-        Ok(Self {
-            bot_id,
-            integration_id,
-            premium_subscriber,
-            subscription_listing_id,
-            available_for_purchase,
-            guild_connection
-        })
     }
 }

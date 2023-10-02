@@ -25,8 +25,8 @@ resolver = "2"
 
 [workspace.dependencies]
 sqlx = "0.7.1"
-serde = "1.0.177"
-serde_json = "1.0.104"
+serde = "1.0.188"
+serde_json = "1.0.107"
 chrono = "0.4.26"
 log = "0.4.19"
 tokio = "1.29.1"

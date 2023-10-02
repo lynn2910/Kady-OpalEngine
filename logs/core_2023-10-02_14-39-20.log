@@ -1,0 +1,63 @@
+[2023-10-02 14:39:20.580666 +02:00] INFO [client] client\src\lib.rs:325: Event handler registered
+[2023-10-02 14:39:20.582285 +02:00] INFO [api] api\src\lib.rs:45: API is listening on 0.0.0.0:9090
+[2023-10-02 14:39:21.699029 +02:00] INFO [core] core\src\main.rs:254: Client started
+[2023-10-02 14:39:22.011807 +02:00] INFO [core] core\src\main.rs:39: Shard 0 ready
+[2023-10-02 14:39:22.011870 +02:00] INFO [core] core\src\main.rs:46: Connected as Kady Alpha
+[[38;5;208m2023-10-02 14:39:27.336992 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 2.463ms[0m
+[[38;5;208m2023-10-02 14:39:30.392687 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.436ms[0m
+[[38;5;208m2023-10-02 14:39:34.387124 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.418ms[0m
+[[38;5;208m2023-10-02 14:39:36.542566 +02:00[0m] [38;5;208mWARN[0m [client] client\src\lib.rs:574: [38;5;208mUnhandled gateway event received: "MESSAGE_UPDATE"[0m
+[[38;5;208m2023-10-02 14:39:38.256305 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.55ms[0m
+[[38;5;208m2023-10-02 14:39:42.299910 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.506ms[0m
+[[38;5;208m2023-10-02 14:39:46.434761 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.381ms[0m
+[2023-10-02 14:39:50.148560 +02:00] INFO [core::application_commands_manager] core\src\application_commands_manager.rs:73: All global commands have been deleted
+[[38;5;208m2023-10-02 14:39:50.658235 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.144ms[0m
+[[38;5;208m2023-10-02 14:39:54.235870 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.569ms[0m
+[[38;5;208m2023-10-02 14:39:58.264571 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.545ms[0m
+[[38;5;208m2023-10-02 14:40:02.320218 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.483ms[0m
+[2023-10-02 14:40:06.151234 +02:00] INFO [core::application_commands_manager] core\src\application_commands_manager.rs:81: All guild commands have been deleted
+[2023-10-02 14:40:06.151313 +02:00] INFO [core::application_commands_manager] core\src\application_commands_manager.rs:82: All application commands are gone
+[2023-10-02 14:40:06.151653 +02:00] INFO [core::application_commands_manager] core\src\application_commands_manager.rs:89: Creating all slash commands for Fun
+[2023-10-02 14:40:08.095290 +02:00] INFO [core::application_commands_manager] core\src\application_commands_manager.rs:116: All slash commands in the Fun have been created
+[2023-10-02 14:40:08.095371 +02:00] INFO [core::application_commands_manager] core\src\application_commands_manager.rs:89: Creating all slash commands for Common
+[[38;5;208m2023-10-02 14:40:08.836485 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 1.528ms[0m
+[[38;5;208m2023-10-02 14:40:11.304846 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.049ms[0m
+[[38;5;208m2023-10-02 14:40:15.072082 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.28ms[0m
+[2023-10-02 14:40:18.847769 +02:00] INFO [core::application_commands_manager] core\src\application_commands_manager.rs:116: All slash commands in the Common have been created
+[2023-10-02 14:40:18.847856 +02:00] INFO [core::application_commands_manager] core\src\application_commands_manager.rs:89: Creating all slash commands for Dev
+[2023-10-02 14:40:20.026116 +02:00] INFO [core::application_commands_manager] core\src\application_commands_manager.rs:116: All slash commands in the Dev have been created
+[2023-10-02 14:40:20.026203 +02:00] INFO [core::application_commands_manager] core\src\application_commands_manager.rs:89: Creating all slash commands for Tools
+[[38;5;208m2023-10-02 14:40:20.206116 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 2.145ms[0m
+[[38;5;208m2023-10-02 14:40:22.881890 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.469ms[0m
+[[38;5;208m2023-10-02 14:40:27.072330 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.294ms[0m
+[[38;5;208m2023-10-02 14:40:31.027886 +02:00[0m] [38;5;208mWARN[0m [client::manager::http] client\src\manager\http.rs:209: [38;5;208mRate limited, retrying in 3.338ms[0m
+[2023-10-02 14:40:35.128301 +02:00] INFO [core::application_commands_manager] core\src\application_commands_manager.rs:116: All slash commands in the Tools have been created
+[2023-10-02 14:40:35.128361 +02:00] INFO [core::application_commands_manager] core\src\application_commands_manager.rs:119: All commands had been updated
+[[38;5;208m2023-10-02 14:41:07.185687 +02:00[0m] [38;5;208mWARN[0m [translation::fmt] translation\src\fmt.rs:54: [38;5;208mTranslation not found for ["user_info", "member"][0m
+[[38;5;208m2023-10-02 14:41:07.463289 +02:00[0m] [38;5;208mWARN[0m [client] client\src\lib.rs:431: [38;5;208mFailed to parse message create event: Error {
+    path: Path {
+        segments: [
+            Map {
+                key: "embeds",
+            },
+            Seq {
+                index: 0,
+            },
+        ],
+    },
+    original: Error("missing field `timestamp`", line: 0, column: 0),
+}[0m
+[[38;5;208m2023-10-02 14:41:17.966577 +02:00[0m] [38;5;208mWARN[0m [translation::fmt] translation\src\fmt.rs:54: [38;5;208mTranslation not found for ["user_info", "member"][0m
+[[38;5;208m2023-10-02 14:41:18.319250 +02:00[0m] [38;5;208mWARN[0m [client] client\src\lib.rs:431: [38;5;208mFailed to parse message create event: Error {
+    path: Path {
+        segments: [
+            Map {
+                key: "embeds",
+            },
+            Seq {
+                index: 0,
+            },
+        ],
+    },
+    original: Error("missing field `timestamp`", line: 0, column: 0),
+}[0m

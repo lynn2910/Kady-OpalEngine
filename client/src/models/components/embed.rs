@@ -1,27 +1,38 @@
-use chrono::{TimeZone, Utc};
+use chrono::Utc;
 use serde::{Serialize, Deserialize };
-use serde_json::Value;
-use error::{Error, ModelError, Result};
 use crate::manager::cache::UpdateCache;
-use crate::manager::http::HttpRessource;
 use crate::models::components::Color;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq, Default)]
 pub struct Embed {
+    #[serde(default)]
     pub title: Option<String>,
+    #[serde(default)]
     pub description: Option<String>,
+    #[serde(rename = "type")]
+    #[serde(default)]
     pub kind: Option<EmbedType>,
 
+    #[serde(default)]
     pub url: Option<String>,
+    #[serde(with = "crate::models::components::timestamp_serde")]
+    #[serde(default)]
     pub timestamp: Option<chrono::DateTime<Utc>>,
 
+    #[serde(default)]
     pub color: Option<Color>,
+    #[serde(default)]
     pub footer: Option<Footer>,
+    #[serde(default)]
     pub image: Option<EmbedImage>,
+    #[serde(default)]
     pub thumbnail: Option<Thumbnail>,
+    #[serde(default)]
     pub fields: Option<Vec<Field>>,
 
+    #[serde(default)]
     pub provider: Option<Provider>,
+    #[serde(default)]
     pub author: Option<Author>,
 }
 
@@ -167,118 +178,20 @@ impl UpdateCache for Embed {
     }
 }
 
-impl HttpRessource for Embed {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let title = match raw.get("title") {
-            Some(title) => match title.as_str() {
-                Some(title) => Some(title.into()),
-                None => return Err(Error::Model(ModelError::InvalidPayload("Failed to parse embed title".into())))
-            },
-            None => None
-        };
-        let description = match raw.get("description") {
-            Some(description) => match description.as_str() {
-                Some(description) => Some(description.into()),
-                None => return Err(Error::Model(ModelError::InvalidPayload("Failed to parse embed description".into())))
-            },
-            None => None
-        };
-        let kind = match raw.get("type") {
-            Some(kind) => Some(EmbedType::from_raw(kind.clone(), shard)?),
-            None => None
-        };
-        let url = match raw.get("url") {
-            Some(url) => match url.as_str() {
-                Some(url) => Some(url.into()),
-                None => return Err(Error::Model(ModelError::InvalidPayload("Failed to parse embed url".into())))
-            },
-            None => None
-        };
-        let timestamp = match raw.get("timestamp") {
-            Some(timestamp) => match timestamp.as_i64() {
-                Some(timestamp) => match Utc.timestamp_millis_opt(timestamp) {
-                    chrono::LocalResult::Single(timestamp) => Some(timestamp),
-                    _ => return Err(Error::Model(ModelError::InvalidPayload("Failed to parse embed timestamp".into())))
-                },
-                None => return Err(Error::Model(ModelError::InvalidPayload("Failed to parse embed timestamp".into())))
-            },
-            None => None
-        };
-        let color = match raw.get("color") {
-            Some(color) => Some(Color::from_raw(color.clone(), shard)?),
-            None => None
-        };
-        let footer = match raw.get("footer") {
-            Some(footer) => Some(Footer::from_raw(footer.clone(), shard)?),
-            None => None
-        };
-        let image = match raw.get("image") {
-            Some(image) => Some(EmbedImage::from_raw(image.clone(), shard)?),
-            None => None
-        };
-        let thumbnail = match raw.get("thumbnail") {
-            Some(thumbnail) => Some(Thumbnail::from_raw(thumbnail.clone(), shard)?),
-            None => None
-        };
-        let fields = match raw.get("fields") {
-            Some(fields) => match fields.as_array() {
-                Some(fields) => Some(fields.iter().map(|field| Field::from_raw(field.clone(), shard)).collect::<Result<Vec<Field>>>()?),
-                None => return Err(Error::Model(ModelError::InvalidPayload("Failed to parse embed fields".into())))
-            },
-            None => None
-        };
-        let provider = match raw.get("provider") {
-            Some(provider) => Some(Provider::from_raw(provider.clone(), shard)?),
-            None => None
-        };
-        let author = match raw.get("author") {
-            Some(author) => Some(Author::from_raw(author.clone(), shard)?),
-            None => None
-        };
-
-        Ok(Self {
-            title,
-            description,
-            kind,
-            url,
-            timestamp,
-            color,
-            footer,
-            image,
-            thumbnail,
-            fields,
-            provider,
-            author
-        })
-    }
-}
-
 /// Represent the type of an embed
 ///
 /// Reference:
 /// - [Embed Type](https://discord.com/developers/docs/resources/channel#embed-object-embed-types)
-#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq, Default)]
+#[serde(rename_all = "lowercase")]
 pub enum EmbedType {
+    #[default]
     Rich,
     Image,
     Video,
     Gifv,
     Article,
     Link
-}
-
-impl HttpRessource for EmbedType {
-    fn from_raw(raw: Value, _: Option<u64>) -> Result<Self> {
-        match raw.as_str() {
-            Some("rich") => Ok(Self::Rich),
-            Some("image") => Ok(Self::Image),
-            Some("video") => Ok(Self::Video),
-            Some("gifv") => Ok(Self::Gifv),
-            Some("article") => Ok(Self::Article),
-            Some("link") => Ok(Self::Link),
-            _ => Err(Error::Model(ModelError::InvalidPayload("Failed to parse embed type".into())))
-        }
-    }
 }
 
 /// Represents a footer in an embed
@@ -293,18 +206,6 @@ pub struct Footer {
     pub proxy_icon_url: Option<String>
 }
 
-impl HttpRessource for Footer {
-    fn from_raw(raw: Value, _: Option<u64>) -> Result<Self> {
-        let text = if let Some(text) = raw.get("text") {
-            if let Some(t) = text.as_str() { t.to_string() }
-            else { return Err(Error::Model(ModelError::InvalidPayload("Failed to parse footer text: field 'text' isn't a string".into())))}
-        } else { return Err(Error::Model(ModelError::InvalidPayload("Failed to parse footer text: no 'text' field".into()))) };
-        let icon_url = if let Some(icon_url) = raw.get("icon_url") { icon_url.as_str().map(|t| t.to_string()) } else { None };
-        let proxy_icon_url = if let Some(proxy_icon_url) = raw.get("proxy_icon_url") { proxy_icon_url.as_str().map(|t| t.to_string()) } else { None };
-
-        Ok(Self { text, icon_url, proxy_icon_url })
-    }
-}
 
 impl Footer {
     pub fn new() -> Self {
@@ -354,22 +255,6 @@ impl UpdateCache for EmbedImage {
     }
 }
 
-impl HttpRessource for EmbedImage {
-    fn from_raw(raw: Value, _: Option<u64>) -> Result<Self> {
-        let url = if let Some(url) = raw.get("url") { url.as_str().map(|t| t.to_string()) } else { None };
-        let proxy_url = if let Some(proxy_url) = raw.get("proxy_url") { proxy_url.as_str().map(|t| t.to_string()) } else { None };
-        let height = if let Some(height) = raw.get("height") { height.as_u64() } else { None };
-        let width = if let Some(width) = raw.get("width") { width.as_u64() } else { None };
-
-        Ok(EmbedImage {
-            url,
-            proxy_url,
-            height,
-            width
-        })
-    }
-}
-
 impl EmbedImage {
     pub fn new(url: impl Into<String>) -> Self {
         Self {
@@ -411,22 +296,6 @@ impl UpdateCache for Thumbnail {
     }
 }
 
-impl HttpRessource for Thumbnail {
-    fn from_raw(raw: Value, _: Option<u64>) -> Result<Self> {
-        let url = if let Some(url) = raw.get("url") { url.as_str().map(|t| t.to_string()) } else { None };
-        let proxy_url = if let Some(proxy_url) = raw.get("proxy_url") { proxy_url.as_str().map(|t| t.to_string()) } else { None };
-        let height = if let Some(height) = raw.get("height") { height.as_u64() } else { None };
-        let width = if let Some(width) = raw.get("width") { width.as_u64() } else { None };
-
-        Ok(Thumbnail {
-            url,
-            proxy_url,
-            height,
-            width
-        })
-    }
-}
-
 impl Thumbnail {
     /// Create a new thumbnail with the given url
     pub fn new(url: impl Into<String>) -> Self {
@@ -458,18 +327,6 @@ impl UpdateCache for Provider {
         if self.url != from.url {
             self.url = from.url.clone();
         }
-    }
-}
-
-impl HttpRessource for Provider {
-    fn from_raw(raw: Value, _: Option<u64>) -> Result<Self> {
-        let name = if let Some(name) = raw.get("name") { name.as_str().map(|t| t.to_string()) } else { None };
-        let url = if let Some(url) = raw.get("url") { url.as_str().map(|t| t.to_string()) } else { None };
-
-        Ok(Provider {
-            name,
-            url
-        })
     }
 }
 
@@ -525,28 +382,6 @@ impl UpdateCache for Author {
     }
 }
 
-impl HttpRessource for Author {
-    fn from_raw(raw: Value, _: Option<u64>) -> Result<Self> {
-        let name = if let Some(name) = raw.get("name") {
-            if let Some(name) = name.as_str() {
-                name.to_string()
-            } else {
-                return Err(Error::Model(ModelError::InvalidPayload("Field 'name' for embed author is not a string".into())));
-            }
-        } else { return Err(Error::Model(ModelError::MissingField("Field 'name' for embed author is missing".into()))); };
-        let url = if let Some(url) = raw.get("url") { url.as_str().map(|t| t.to_string()) } else { None };
-        let icon_url = if let Some(icon_url) = raw.get("icon_url") { icon_url.as_str().map(|t| t.to_string()) } else { None };
-        let proxy_icon_url = if let Some(proxy_icon_url) = raw.get("proxy_icon_url") { proxy_icon_url.as_str().map(|t| t.to_string()) } else { None };
-
-        Ok(Author {
-            name,
-            url,
-            icon_url,
-            proxy_icon_url
-        })
-    }
-}
-
 impl Author {
     /// Create a new empty author
     pub fn new() -> Self {
@@ -597,33 +432,6 @@ impl UpdateCache for Field {
         if self.inline != from.inline {
             self.inline = from.inline;
         }
-    }
-}
-
-impl HttpRessource for Field {
-    fn from_raw(raw: Value, _: Option<u64>) -> Result<Self> {
-        let name = if let Some(name) = raw.get("name") {
-            if let Some(name) = name.as_str() {
-                name.to_string()
-            } else {
-                return Err(Error::Model(ModelError::InvalidPayload("Field 'name' for embed field is not a string".into())));
-            }
-        } else { return Err(Error::Model(ModelError::MissingField("Field 'name' for embed field is missing".into()))); };
-
-        let value = if let Some(value) = raw.get("value") {
-            if let Some(value) = value.as_str() {
-                value.to_string()
-            } else {
-                return Err(Error::Model(ModelError::InvalidPayload("Field 'value' for embed field is not a string".into())));
-            }
-        } else { return Err(Error::Model(ModelError::MissingField("Field 'value' for embed field is missing".into()))); };
-        let inline = if let Some(inline) = raw.get("inline") { inline.as_bool() } else { None };
-
-        Ok(Field {
-            name,
-            value,
-            inline
-        })
     }
 }
 

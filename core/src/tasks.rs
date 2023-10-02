@@ -17,6 +17,7 @@ use signal_hook::iterator::SignalsInfo;
 use tokio::sync::RwLock;
 use client::manager::http::HttpManager;
 use client::manager::shard::ShardManager;
+use config::Config;
 
 #[cfg(unix)]
 pub(crate) fn spawn_manager(
@@ -101,6 +102,7 @@ pub(crate) struct ShardMemoryReport {
 pub(crate) async fn report_memory_usage(
     cache_lock: Arc<RwLock<client::manager::cache::CacheManager>>,
     shard_manager: Arc<RwLock<ShardManager>>,
+    config: Config,
     absolute_values: bool
 ) -> Result<MemoryReport, String>
 {
@@ -183,7 +185,7 @@ pub(crate) async fn report_memory_usage(
     // write the result
     let mut path = match std::env::current_dir() {
         Ok(mut p) => {
-            p.push("../../_debug/mem_report");
+            p.push(config.memory_report_path);
             p
         },
         Err(e) => {

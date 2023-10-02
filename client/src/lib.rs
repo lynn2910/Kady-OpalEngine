@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
-use std::thread::sleep;
+use chrono::Utc;
 use futures_util::StreamExt;
 use log::{debug, error, info, warn};
 use reqwest::header;
@@ -12,9 +12,12 @@ use error::{ Result, ApiError, Error };
 use crate::constants::API_URL;
 use crate::manager::cache::CacheManager;
 use crate::manager::events::{Context, EventHandler};
-use crate::manager::http::{HttpConfiguration, HttpManager, HttpRessource};
+use crate::manager::http::{HttpConfiguration, HttpManager};
 use crate::manager::shard::{GatewayEvent, Shard, ShardChannels, ShardManager};
 use crate::models::events::{GuildCreate, GuildDelete, GuildMemberAdd, GuildMemberUpdate, InteractionCreate, MessageCreate, MessageDelete, Ready};
+use crate::models::guild::GuildMember;
+use crate::models::interaction::Interaction;
+use crate::models::message::Message;
 use crate::typemap::{Type, TypeMap};
 
 pub mod manager;
@@ -309,7 +312,7 @@ impl Client {
             }
 
             // wait 1s to don't burn the CPU
-            sleep(core::time::Duration::from_millis(500));
+            tokio::time::sleep(core::time::Duration::from_millis(500)).await;
         }
 
         info!(target: "Client", "The client is fully closed");
@@ -337,7 +340,7 @@ impl Client {
         }
     }
 
-    fn gateway_event(&mut self, _op: GatewayEvent, content: Value, shard: u64) {
+    fn gateway_event(&mut self, _op: GatewayEvent, mut content: Value, shard: u64) {
         let event = match content["t"].as_str() {
             Some(d) => d,
             None => {
@@ -348,13 +351,9 @@ impl Client {
 
         match event {
             "READY" => {
-                let ready: Ready = match Ready::from_raw(content["d"].clone(), Some(shard)) {
-                    Ok(d) => d,
-                    Err(err) => {
-                        #[cfg(feature = "debug")]
-                        warn!("Failed to parse ready event: {:?}", err);
-                        return;
-                    }
+                let ready: Ready = Ready {
+                    timestamp: Utc::now(),
+                    shard
                 };
 
                 if let Some(events) = self.events.as_ref() {
@@ -373,11 +372,12 @@ impl Client {
                 }
             },
             "GUILD_CREATE" => {
-                let guild_create: GuildCreate = match GuildCreate::from_raw(content["d"].clone(), Some(shard)) {
+                content["d"]["shard"] = Value::from(shard);
+                let guild_create: GuildCreate = match serde_path_to_error::deserialize(content["d"].clone()) {
                     Ok(d) => d,
                     Err(err) => {
                         #[cfg(feature = "debug")]
-                        warn!("Failed to parse guild create event: {:?}", err);
+                        warn!("Failed to parse guild create event: {:#?}", err);
                         return;
                     }
                 };
@@ -398,11 +398,12 @@ impl Client {
                 }
             },
             "GUILD_DELETE" => {
-                let guild_delete: GuildDelete = match GuildDelete::from_raw(content["d"].clone(), Some(shard)) {
+                content["d"]["shard"] = Value::from(shard);
+                let guild_delete: GuildDelete = match serde_path_to_error::deserialize(content["d"].clone()) {
                     Ok(d) => d,
                     Err(err) => {
                         #[cfg(feature = "debug")]
-                        warn!("Failed to parse guild delete event: {:?}", err);
+                        warn!("Failed to parse guild delete event: {:#?}", err);
                         return;
                     }
                 };
@@ -423,13 +424,19 @@ impl Client {
                 }
             },
             "MESSAGE_CREATE" => {
-                let message_create: MessageCreate = match MessageCreate::from_raw(content["d"].clone(), Some(shard)) {
+                let parsed_message: Message = match serde_path_to_error::deserialize(content["d"].clone()) {
                     Ok(d) => d,
                     Err(err) => {
                         #[cfg(feature = "debug")]
-                        warn!("Failed to parse message create event: {:?}", err);
+                        warn!("Failed to parse message create event: {:#?}", err);
                         return;
                     }
+                };
+
+                let message_create = MessageCreate {
+                    message: parsed_message,
+                    guild_id: content.get("guild_id").map(|i| i.to_string().into()),
+                    shard
                 };
 
                 if let Some(events) = self.events.as_ref() {
@@ -448,7 +455,8 @@ impl Client {
                 }
             },
             "MESSAGE_DELETE" => {
-                let message_delete: MessageDelete = match MessageDelete::from_raw(content["d"].clone(), Some(shard)) {
+                content["d"]["shard"] = Value::from(shard);
+                let message_delete: MessageDelete = match serde_json::from_value(content["d"].clone()) {
                     Ok(d) => d,
                     Err(err) => {
                         #[cfg(feature = "debug")]
@@ -473,13 +481,19 @@ impl Client {
                 }
             },
             "GUILD_MEMBER_ADD" => {
-                let guild_member_add: GuildMemberAdd = match GuildMemberAdd::from_raw(content["d"].clone(), Some(shard)) {
+                content["d"]["shard"] = Value::from(shard);
+                let guild_member: GuildMember = match serde_path_to_error::deserialize(content["d"].clone()) {
                     Ok(d) => d,
                     Err(err) => {
-                        #[cfg(feature = "debug")]
-                        warn!("Failed to parse guild member add event: {:?}", err);
+                        warn!("Failed to parse guild member add event: {:#?}", err);
                         return;
                     }
+                };
+
+                let guild_member_add= GuildMemberAdd {
+                    member: guild_member,
+                    guild_id: content["d"]["guild_id"].to_string().into(),
+                    shard,
                 };
 
                 if let Some(events) = self.events.as_ref() {
@@ -498,13 +512,19 @@ impl Client {
                 }
             },
             "GUILD_MEMBER_UPDATE" => {
-                let guild_member_update: GuildMemberUpdate = match GuildMemberUpdate::from_raw(content["d"].clone(), Some(shard)) {
+                content["d"]["shard"] = Value::from(shard);
+                let guild_member: GuildMember = match serde_path_to_error::deserialize(content["d"].clone()) {
                     Ok(d) => d,
                     Err(err) => {
                         #[cfg(feature = "debug")]
-                        warn!("Failed to parse guild member update event: {:?}", err);
+                        warn!("Failed to parse guild member update event: {:#?}", err);
                         return;
                     }
+                };
+
+                let guild_member_update = GuildMemberUpdate {
+                    member: guild_member,
+                    shard,
                 };
 
                 if let Some(events) = self.events.as_ref() {
@@ -523,14 +543,16 @@ impl Client {
                 }
             },
             "INTERACTION_CREATE" => {
-                let interaction_create: InteractionCreate = match InteractionCreate::from_raw(content["d"].clone(), Some(shard)) {
+                let interaction: Interaction = match serde_path_to_error::deserialize(content["d"].clone()) {
                     Ok(d) => d,
                     Err(err) => {
                         #[cfg(feature = "debug")]
-                        warn!("Failed to parse interaction create event: {:?}", err);
+                        warn!("Failed to parse interaction create event: {:#?}", err);
                         return;
                     }
                 };
+
+                let interaction_create = InteractionCreate { interaction, shard };
 
                 if let Some(events) = self.events.as_ref() {
                     let ctx = Context::new(

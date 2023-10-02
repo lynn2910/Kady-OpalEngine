@@ -1,13 +1,11 @@
-use serde::{ Serialize, Deserialize };
-use serde_json::{json, Value};
-use error::{Result, Error, ModelError};
+use serde::{Serialize, Deserialize, Deserializer, Serializer};
+use serde_json::Value;
 use crate::manager::cache::UpdateCache;
-use crate::manager::http::HttpRessource;
 use crate::models::channel::ChannelKind;
 use crate::models::components::Emoji;
 use crate::models::interaction::InteractionDataOptionValue;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum ComponentType {
     ActionRow = 1,
     Button = 2,
@@ -19,34 +17,34 @@ pub enum ComponentType {
     ChannelSelect = 8,
 }
 
-impl HttpRessource for ComponentType {
-    fn from_raw(raw: Value, _: Option<u64>) -> Result<Self> {
-        match raw.as_u64() {
-            Some(1) => Ok(Self::ActionRow),
-            Some(2) => Ok(Self::Button),
-            Some(3) => Ok(Self::StringSelect),
-            Some(4) => Ok(Self::TextInput),
-            Some(5) => Ok(Self::UserSelect),
-            Some(6) => Ok(Self::RoleSelect),
-            Some(7) => Ok(Self::MentionSelect),
-            Some(8) => Ok(Self::ChannelSelect),
-            _ => Err(Error::Model(ModelError::InvalidPayload("Failed to parse component type".into())))
+impl<'de> Deserialize<'de> for ComponentType {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
+        match Deserialize::deserialize(deserializer)? {
+            1 => Ok(Self::ActionRow),
+            2 => Ok(Self::Button),
+            3 => Ok(Self::StringSelect),
+            4 => Ok(Self::TextInput),
+            5 => Ok(Self::UserSelect),
+            6 => Ok(Self::RoleSelect),
+            7 => Ok(Self::MentionSelect),
+            8 => Ok(Self::ChannelSelect),
+            _ => Err(serde::de::Error::custom("invalid component type"))
         }
     }
 }
 
-impl ComponentType {
-    pub(crate) fn to_json(&self) -> Value {
+impl Serialize for ComponentType {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
         match self {
-            Self::ActionRow => 1,
-            Self::Button => 2,
-            Self::StringSelect => 3,
-            Self::TextInput => 4,
-            Self::UserSelect => 5,
-            Self::RoleSelect => 6,
-            Self::MentionSelect => 7,
-            Self::ChannelSelect => 8
-        }.into()
+            Self::ActionRow => serializer.serialize_u8(1),
+            Self::Button => serializer.serialize_u8(2),
+            Self::StringSelect => serializer.serialize_u8(3),
+            Self::TextInput => serializer.serialize_u8(4),
+            Self::UserSelect => serializer.serialize_u8(5),
+            Self::RoleSelect => serializer.serialize_u8(6),
+            Self::MentionSelect => serializer.serialize_u8(7),
+            Self::ChannelSelect => serializer.serialize_u8(8),
+        }
     }
 }
 
@@ -56,7 +54,9 @@ impl ComponentType {
 /// - [Action Row Structure](https://discord.com/developers/docs/interactions/message-components#action-row-object-action-row-structure)
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct ActionRow {
+    #[serde(rename = "type")]
     pub kind: ComponentType,
+    #[serde(default)]
     pub components: Vec<Component>,
 }
 
@@ -69,23 +69,6 @@ impl UpdateCache for ActionRow {
         if self.components != from.components {
             self.components = from.components.clone();
         }
-    }
-}
-
-impl HttpRessource for ActionRow {
-     fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let kind = ComponentType::ActionRow;
-        let components = raw["components"]
-            .as_array()
-            .ok_or_else(|| Error::Model(ModelError::InvalidPayload("Failed to parse action row components".into())))?
-            .iter()
-            .map(|c| Component::from_raw(c.clone(), shard))
-            .collect::<Result<Vec<Component>>>()?;
-
-        Ok(Self {
-            kind,
-            components,
-        })
     }
 }
 
@@ -109,23 +92,12 @@ impl ActionRow {
         self.components.push(component);
         self
     }
-
-    pub(crate) fn to_json(&self) -> Value {
-        let mut components = Vec::new();
-        for comp in &self.components {
-            components.push(comp.to_json())
-        }
-
-        json!({
-            "type": self.kind.to_json(),
-            "components": Value::Array(components)
-        })
-    }
 }
 
 /// Represents a component in a message
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 #[allow(clippy::large_enum_variant)]
+#[serde(untagged)]
 pub enum Component {
     ActionRow(ActionRow),
     Button(Button),
@@ -136,10 +108,10 @@ pub enum Component {
 impl Component {
     pub fn to_json(&self) -> Value {
         match self {
-            Self::ActionRow(action_row) => action_row.to_json(),
-            Self::Button(btn) => btn.to_json(),
-            Self::SelectMenu(select_menu) => select_menu.to_json(),
-            Self::TextInput(text_input) => text_input.to_json()
+            Self::ActionRow(action_row) => serde_json::to_value(action_row).unwrap_or(Value::Null),
+            Self::Button(btn) => serde_json::to_value(btn).unwrap_or(Value::Null),
+            Self::SelectMenu(select_menu) => serde_json::to_value(select_menu).unwrap_or(Value::Null),
+            Self::TextInput(text_input) => serde_json::to_value(text_input).unwrap_or(Value::Null),
         }
     }
 }
@@ -171,21 +143,6 @@ impl UpdateCache for Component {
     }
 }
 
-impl HttpRessource for Component {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let kind = ComponentType::from_raw(raw["type"].clone(), shard)?;
-
-        match kind {
-            ComponentType::ActionRow => Ok(Self::ActionRow(ActionRow::from_raw(raw, shard)?)),
-            ComponentType::Button => Ok(Self::Button(Button::from_raw(raw, shard)?)),
-            ComponentType::StringSelect | ComponentType::UserSelect
-                | ComponentType::RoleSelect | ComponentType::MentionSelect | ComponentType::ChannelSelect => Ok(Self::SelectMenu(SelectMenu::from_raw(raw, shard)?)),
-            ComponentType::TextInput => Ok(Self::TextInput(TextInput::from_raw(raw, shard)?)),
-        }
-    }
-}
-
-
 
 
 
@@ -195,6 +152,7 @@ impl HttpRessource for Component {
 /// - [Button Structure](https://discord.com/developers/docs/interactions/message-components#button-object-button-structure)
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct Button {
+    #[serde(rename = "type")]
     pub kind: ComponentType,
     pub style: ButtonStyle,
     pub label: Option<String>,
@@ -233,28 +191,6 @@ impl UpdateCache for Button {
         if self.disabled != from.disabled {
             self.disabled = from.disabled;
         }
-    }
-}
-
-impl HttpRessource for Button {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let kind = ComponentType::Button;
-        let style = ButtonStyle::from_raw(raw["style"].clone(), shard)?;
-        let label = raw["label"].as_str().map(|s| s.to_string());
-        let emoji = if let Some(emoji) = raw.get("emoji") { Some(Emoji::from_raw(emoji.clone(), shard)?) } else {  None  };
-        let custom_id = raw["custom_id"].as_str().map(|s| s.to_string()).ok_or_else(|| Error::Model(ModelError::InvalidPayload("Failed to parse button custom id".into())))?;
-        let url = raw["url"].as_str().map(|s| s.to_string());
-        let disabled = raw["disabled"].as_bool();
-
-        Ok(Self {
-            kind,
-            style,
-            label,
-            emoji,
-            custom_id,
-            url,
-            disabled,
-        })
     }
 }
 
@@ -301,26 +237,13 @@ impl Button {
         self.disabled = Some(disabled);
         self
     }
-
-    pub(crate) fn to_json(&self) -> Value {
-        let payload = json!({
-            "type": self.kind.to_json(),
-            "style": self.style.to_json(),
-            "label": self.label,
-            "emoji": self.emoji.clone().map(|e| e.to_json()),
-            "custom_id": self.custom_id,
-            "url": self.url,
-            "disabled": self.disabled
-        });
-        payload
-    }
 }
 
 /// Represents a button style
 ///
 /// Reference:
 /// - [Button Styles](https://discord.com/developers/docs/interactions/message-components#button-object-button-styles)
-#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum ButtonStyle {
     Primary = 1,
     Secondary = 2,
@@ -329,32 +252,30 @@ pub enum ButtonStyle {
     Link = 5,
 }
 
-impl HttpRessource for ButtonStyle {
-    fn from_raw(raw: Value, _: Option<u64>) -> Result<Self> {
-        match raw.as_u64() {
-            Some(1) => Ok(Self::Primary),
-            Some(2) => Ok(Self::Secondary),
-            Some(3) => Ok(Self::Success),
-            Some(4) => Ok(Self::Danger),
-            Some(5) => Ok(Self::Link),
-            _ => Err(Error::Model(ModelError::InvalidPayload("Failed to parse button style".into()))),
+impl Serialize for ButtonStyle {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+        match self {
+            Self::Primary => serializer.serialize_u8(1),
+            Self::Secondary => serializer.serialize_u8(2),
+            Self::Success => serializer.serialize_u8(3),
+            Self::Danger => serializer.serialize_u8(4),
+            Self::Link => serializer.serialize_u8(5),
         }
     }
 }
 
-impl ButtonStyle {
-    pub(crate) fn to_json(&self) -> Value {
-        match self {
-            Self::Primary => 1,
-            Self::Secondary => 2,
-            Self::Success => 3,
-            Self::Danger => 4,
-            Self::Link => 5,
-        }.into()
+impl<'de> Deserialize<'de> for ButtonStyle {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
+        match Deserialize::deserialize(deserializer)? {
+            1 => Ok(Self::Primary),
+            2 => Ok(Self::Secondary),
+            3 => Ok(Self::Success),
+            4 => Ok(Self::Danger),
+            5 => Ok(Self::Link),
+            _ => Err(serde::de::Error::custom("invalid button style"))
+        }
     }
 }
-
-
 
 
 
@@ -364,11 +285,13 @@ impl ButtonStyle {
 /// - [Select Menu Structure](https://discord.com/developers/docs/interactions/message-components#select-menu-object-select-menu-structure)
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct SelectMenu {
+    #[serde(rename = "type")]
     pub kind: ComponentType,
     pub custom_id: String,
     /// Specified choices in a select menu (only required and available for string selects (type 3);
     ///
     /// The maximum number of choices is 25.
+    #[serde(default)]
     pub options: Vec<SelectOption>,
     /// List of channel types to include in the channel select component
     pub channel_types: Option<Vec<ChannelKind>>,
@@ -410,51 +333,6 @@ impl UpdateCache for SelectMenu {
     }
 }
 
-impl HttpRessource for SelectMenu {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let kind = ComponentType::from_raw(raw["type"].clone(), shard)?;
-        let custom_id = raw["custom_id"].as_str().ok_or(Error::Model(ModelError::InvalidPayload("Failed to parse select menu options".into())))?.to_string();
-        let options = raw["options"].as_array().ok_or(Error::Model(ModelError::InvalidPayload("Failed to parse select menu options".into())))?.iter().map(|o| SelectOption::from_raw(o.clone(), shard)).collect::<Result<Vec<SelectOption>>>()?;
-        let channel_types = raw["channel_types"].as_array().map(|a| a.iter().map(|v| ChannelKind::from_raw(v.clone(), shard)).collect::<Result<Vec<ChannelKind>>>()).transpose()?;
-        let placeholder = raw["placeholder"].as_str().map(|s| s.to_string());
-        let min_values = raw["min_values"].as_u64();
-        let max_values = raw["max_values"].as_u64();
-        let disabled = raw["disabled"].as_bool();
-
-        Ok(Self {
-            kind,
-            custom_id,
-            options,
-            channel_types,
-            placeholder,
-            min_values,
-            max_values,
-            disabled,
-        })
-    }
-}
-
-impl SelectMenu {
-    pub(crate) fn to_json(&self) -> Value {
-        json!({
-            "type": self.kind.to_json(),
-            "custom_id": self.custom_id,
-            "options": self.options.clone()
-                .into_iter()
-                .map(|option| option.to_json())
-                .collect::<Vec<Value>>(),
-            "channel_types": self.channel_types.clone().map(|channels| channels
-                .into_iter()
-                .map(|kind| kind.to_json())
-                .collect::<Vec<Value>>()),
-            "placeholder": self.placeholder,
-            "min_values": self.min_values,
-            "max_values": self.max_values,
-            "disabled": self.disabled
-        })
-    }
-}
-
 /// Represents a select option in a select menu
 ///
 /// Reference:
@@ -469,31 +347,6 @@ pub struct SelectOption {
     pub default: Option<bool>,
 }
 
-impl SelectOption {
-    pub(crate) fn to_json(&self) -> Value {
-        json!({
-            "label": self.label,
-            "value": self.value,
-            "description": self.description,
-            "emoji": self.emoji.clone().map(|e| e.to_json()),
-            "default": self.default
-        })
-    }
-}
-
-impl HttpRessource for SelectOption {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let label = raw["label"].as_str().ok_or(Error::Model(ModelError::InvalidPayload("Failed to parse select option label".into())))?.to_string();
-        let value = raw["value"].as_str().ok_or(Error::Model(ModelError::InvalidPayload("Failed to parse select option value".into())))?.to_string();
-        let description = raw["description"].as_str().map(|s| s.to_string());
-        let emoji = raw.get("emoji").map(|e| Emoji::from_raw(e.clone(), shard)).transpose()?;
-        let default = raw["default"].as_bool();
-
-        Ok(Self { label, value, description, emoji, default })
-    }
-}
-
-
 
 
 /// Represents a text input in a modal
@@ -502,6 +355,7 @@ impl HttpRessource for SelectOption {
 /// - [Text Input Structure](https://discord.com/developers/docs/interactions/message-components#text-input-object-text-input-structure)
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct TextInput {
+    #[serde(rename = "type")]
     pub kind: ComponentType,
     pub style: Option<TextInputStyle>,
     pub label: Option<String>,
@@ -546,63 +400,6 @@ impl UpdateCache for TextInput {
     }
 }
 
-impl HttpRessource for TextInput {
-    fn from_raw(raw: Value, shard: Option<u64>) -> Result<Self> {
-        let kind = ComponentType::TextInput;
-        let style = if let Some(s) = raw.get("style") {
-            Some(TextInputStyle::from_raw(s.clone(), shard)?)
-        } else {
-            None
-        };
-        let label = if let Some(label) = raw.get("label") {
-            Some(
-                label.as_str()
-                    .ok_or(Error::Model(ModelError::InvalidPayload("Failed to parse text input label".into())))?
-                    .to_string()
-            )
-        } else {
-            None
-        };
-        let custom_id = raw["custom_id"].as_str().ok_or(Error::Model(ModelError::InvalidPayload("Failed to parse text input custom id".into())))?.to_string();
-        let placeholder = raw["placeholder"].as_str().map(|s| s.to_string());
-        let min_length = raw["min_length"].as_u64();
-        let max_length = raw["max_length"].as_u64();
-        let disabled = raw["disabled"].as_bool();
-        let value = if let Some(v) = raw.get("value") {
-            Some(InteractionDataOptionValue::from_raw(v.clone(), shard)?)
-        } else {
-            None
-        };
-
-        Ok(Self {
-            kind,
-            style,
-            label,
-            custom_id,
-            placeholder,
-            min_length,
-            max_length,
-            disabled,
-            value
-        })
-    }
-}
-
-impl TextInput {
-    pub(crate) fn to_json(&self) -> Value {
-        json!({
-            "type": self.kind.to_json(),
-            "style": self.style.as_ref().map(|s| s.to_json()),
-            "label": self.label,
-            "custom_id": self.custom_id,
-            "placeholder": self.placeholder,
-            "min_length": self.min_length,
-            "max_length": self.max_length,
-            "disabled": self.disabled
-        })
-    }
-}
-
 /// Represents a text input style
 ///
 /// Reference:
@@ -611,23 +408,4 @@ impl TextInput {
 pub enum TextInputStyle {
     Short = 1,
     Paragraph = 2,
-}
-
-impl HttpRessource for TextInputStyle {
-    fn from_raw(raw: Value, _: Option<u64>) -> Result<Self> {
-        match raw.as_u64() {
-            Some(1) => Ok(Self::Short),
-            Some(2) => Ok(Self::Paragraph),
-            _ => Err(Error::Model(ModelError::InvalidPayload("Failed to parse text input style".into())))
-        }
-    }
-}
-
-impl TextInputStyle {
-    pub(crate) fn to_json(&self) -> Value {
-        match self {
-            Self::Short => 1,
-            Self::Paragraph => 2
-        }.into()
-    }
 }
