@@ -1,7 +1,9 @@
 use std::collections::HashMap;
+use std::fmt::Display;
 use serde::{Serialize, Deserialize, Deserializer, Serializer};
 use serde_json::{json, Number, Value};
 use error::Result;
+use crate::manager::cache::UpdateCache;
 use crate::manager::http::{ApiResult, Http};
 use crate::models::channel::{Channel, ChannelId, ChannelKind};
 use crate::models::components::message_components::{Component, ComponentType};
@@ -70,6 +72,8 @@ pub struct Interaction {
     pub locale: Option<String>,
     /// Guild's preferred locale, if invoked in a guild
     pub guild_locale: Option<String>,
+    /// When the interaction is a component, the message attached
+    pub message: Option<Message>
 }
 
 impl Interaction {
@@ -161,9 +165,42 @@ impl Interaction {
             Some(files)
         ).await
     }
+
+    /// Edits the original message.
+    ///
+    /// # Arguments
+    ///
+    /// * `http` - A reference to the Http structure.
+    /// * `content` - A MessageBuilder instance for building the content of your message
+    pub async fn edit_original_message(&self, http: &Http, content: MessageBuilder) -> Option<Result<ApiResult<()>>> {
+        if self.channel_id.is_none() || self.message.is_none() {
+            return None;
+        }
+
+        Some(
+            http.reply_interaction(
+                &self.id,
+                &self.token,
+                InteractionCallbackType::UpdateMessage,
+                content.to_json(),
+                None
+            ).await
+        )
+        //
+        // Some(
+        //     http.edit_message(
+        //         self.channel_id.as_ref().unwrap(),
+        //         &self.message.as_ref().unwrap().id,
+        //         content,
+        //         None
+        //     ).await
+        // )
+    }
 }
 
 /// Represents the type of an interaction
+///
+/// Documentation: https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-response-object-interaction-callback-type
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum InteractionCallbackType {
     Pong = 1,
@@ -234,6 +271,9 @@ pub struct InteractionData {
     /// The params + values from the user
     pub options: Option<Vec<InteractionDataOption>>,
 
+    /// The values returned from a select menu interaction
+    pub values: Option<Vec<String>>,
+
     /// The type of the component
     pub component_type: Option<ComponentType>,
     pub components: Option<Vec<Component>>,
@@ -279,16 +319,37 @@ pub enum InteractionDataOptionValue {
     Integer(i64),
     Double(f64),
     Boolean(bool),
+    None
 }
 
-impl ToString for InteractionDataOptionValue {
-    fn to_string(&self) -> String {
-        match self {
+impl Default for InteractionDataOptionValue {
+    fn default() -> Self {
+        Self::None
+    }
+}
+
+impl Display for InteractionDataOptionValue {
+    fn fmt(&self, f1: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
             Self::String(s) => s.to_string(),
             Self::Integer(i) => i.to_string(),
             Self::Double(f) => f.to_string(),
-            Self::Boolean(b) => b.to_string()
-        }
+            Self::Boolean(b) => b.to_string(),
+            Self::None => String::new()
+        };
+        write!(f1, "{}", str)
+    }
+}
+
+impl From<&str> for InteractionDataOptionValue {
+    fn from(value: &str) -> Self {
+        Self::String(value.to_string())
+    }
+}
+
+impl From<String> for InteractionDataOptionValue {
+    fn from(value: String) -> Self {
+        Self::String(value)
     }
 }
 
@@ -311,7 +372,7 @@ impl Eq for InteractionDataOptionValue {}
 ///
 /// Reference:
 /// - [Discord Docs](https://discord.com/developers/docs/interactions/application-commands#application-command-object-application-command-types)
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Eq, PartialEq)]
 pub enum ApplicationCommandType {
     /// Slash commands; a text-based command that shows up when a user types /
     ChatInput = 1,
@@ -347,7 +408,7 @@ impl ApplicationCommandType {
 ///
 /// Reference:
 /// - [Discord Docs](https://discord.com/developers/docs/interactions/application-commands#application-command-object-application-command-structure)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct ApplicationCommand {
     pub id: Snowflake,
     #[serde(rename = "type")]
@@ -377,6 +438,50 @@ pub struct ApplicationCommand {
     pub nsfw: bool,
     /// Auto-incrementing version identifier updated during substantial record changes
     pub version: Snowflake,
+}
+
+impl UpdateCache for ApplicationCommand {
+    fn update(&mut self, from: &Self) {
+        if self.id != from.id {
+            self.id = from.id.clone();
+        }
+        if self.command_type != from.command_type {
+            self.command_type = from.command_type.clone();
+        }
+        if self.application_id != from.application_id {
+            self.application_id = from.application_id.clone();
+        }
+        if self.guild_id != from.guild_id {
+            self.guild_id = from.guild_id.clone();
+        }
+        if self.name != from.name {
+            self.name = from.name.clone();
+        }
+        if self.name_localizations != from.name_localizations {
+            self.name_localizations = from.name_localizations.clone();
+        }
+        if self.description != from.description {
+            self.description = from.description.clone();
+        }
+        if self.description_localizations != from.description_localizations {
+            self.description_localizations = from.description_localizations.clone();
+        }
+        if self.options != from.options {
+            self.options = from.options.clone();
+        }
+        if self.default_member_permissions != from.default_member_permissions {
+            self.default_member_permissions = from.default_member_permissions.clone();
+        }
+        if self.dm_permission != from.dm_permission {
+            self.dm_permission = from.dm_permission;
+        }
+        if self.nsfw != from.nsfw {
+            self.nsfw = from.nsfw;
+        }
+        if self.version != from.version {
+            self.version = from.version.clone();
+        }
+    }
 }
 
 impl ApplicationCommand {
@@ -470,7 +575,7 @@ impl ApplicationCommand {
 ///
 /// Reference:
 /// - [Discord Docs](https://discord.com/developers/docs/interactions/application-commands#application-command-object-application-command-option-structure)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct ApplicationCommandOption {
     #[serde(rename = "type")]
     pub option_type: ApplicationCommandOptionType,
@@ -588,10 +693,14 @@ impl ApplicationCommandOption {
 }
 
 /// Used for the min_value and max_value fields of ApplicationCommandOption
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum OptionValue {
     Integer(i64),
     Double(f64),
+}
+
+impl Eq for OptionValue {
+
 }
 
 impl OptionValue {
@@ -671,7 +780,7 @@ impl ApplicationCommandOptionType {
 ///
 /// Reference:
 /// - [Discord Docs](https://discord.com/developers/docs/interactions/application-commands#application-command-object-application-command-option-choice-structure)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct ApplicationCommandOptionChoice {
     pub name: String,
     pub name_localizations: Option<HashMap<String, String>>,
@@ -722,6 +831,8 @@ pub enum CommandChoiceValue {
     Integer(i64),
     Double(f64),
 }
+
+impl Eq for CommandChoiceValue {}
 
 impl CommandChoiceValue {
     pub fn new_string(s: String) -> Self {

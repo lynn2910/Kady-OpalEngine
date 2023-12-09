@@ -1,0 +1,9 @@
+{
+  "path": "commands",
+  "data": {
+    "help": {
+      "use": "/help;/help <commande>",
+      "description": "Cette command permet d'avoir la liste des commandes et de savoir ce que fait chaque commande"
+    }
+  }
+}

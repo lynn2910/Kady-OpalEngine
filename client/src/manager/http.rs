@@ -794,6 +794,40 @@ impl Http {
         }
     }
 
+    pub async fn edit_message(
+        &self,
+        channel: &ChannelId,
+        message: &Snowflake,
+        payload: MessageBuilder,
+        files: Option<Vec<AttachmentBuilder>>
+    ) -> Result<ApiResult<Message>>
+    {
+        let (tx, rx) = futures_channel::mpsc::unbounded();
+
+        let request = Request {
+            method: reqwest::Method::PATCH,
+            url: format!("{API_URL}/channels/{}/messages/{}", channel, message),
+            body: Some(payload.to_json().to_string()),
+            sender: Arc::new(Mutex::new(tx)),
+            headers: None,
+            multipart: files
+        };
+
+        let res = self.send_raw(
+            request.clone(),
+            rx
+        ).await;
+
+        match res {
+            Ok(value) => {
+                let mut value = value;
+                value["channel_id"] = json!(channel.0);
+                convert_value(value, None)
+            },
+            Err(e) => Err(e)
+        }
+    }
+    
     /// Send a message to a User channel.
     ///
     /// Reference:

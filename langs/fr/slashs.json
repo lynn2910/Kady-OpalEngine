@@ -41,6 +41,91 @@
     "user_info": {
       "not_member": "> 📋 **Informations général**\n\n**Pseudonyme**: {username} (<@{id}>)\n**Identifiant:** `{id}`\n**Création du compte :** <t:{account_creation}> (<t:{account_creation}:R>)",
       "member": "> 📋 **Informations général**\n\n**Pseudonyme**: {username} (<@{id}>)\n**Identifiant:** `{id}`\n**Création du compte :** <t:{account_creation}> (<t:{account_creation}:R>)\n\n📅 **Date d'arrivée** : <t:{join_timestamp}> (<t:{join_timestamp}:R>)"
+    },
+    "help": {
+      "author_text": "Kady Help",
+      "general_message": "** **\n🏷️ **Je possède** `{commands_number}` **commandes.**\n\n> **Mes commandes les plus utilisées:**\n{most_used_commands}\n\n🔎 **Vous ne trouvez pas votre bonheur dans cette liste ?**\nRecherchez par catégorie ou avec le nom",
+      "category_selector": {
+        "placeholder": "Sélectionner une catégorie",
+        "categories": {
+          "fun": {
+            "name": "Fun",
+            "description": "La fête peut enfin commencée !"
+          },
+          "common": {
+            "name": "Commun",
+            "description": "Les commandes de base"
+          },
+          "tools": {
+            "name": "Outils et fonctionnalités",
+            "description": "Les commandes associées à une fonctionnalité"
+          },
+          "all": {
+            "name": "Toutes les commandes",
+            "description": "Voir toutes les commandes"
+          }
+        }
+      },
+      "invalid_category": "> ❌ ** ** **Cette catégorie n'existe plus ou est indisponible.**",
+      "all_commands": {
+        "title": "Liste des commandes",
+        "description": "** **\n🏷️ **Vous voyez** `{commands_number}` **commandes.**\n** **"
+      },
+      "category": {
+        "author": "Catégorie {ctg}",
+        "description": "> 🔎 **Voici les commandes de la catégorie** {ctg}**:**\n\n{cmds}\n\n**Pour obtenir de l'aide sur une commande, tapez** `/help <votre commande>`"
+      },
+      "command": {
+        "unknown": "> 🔎 **Cette commande n'existe pas.**",
+        "invalid_command_name": "> ❌ **Un nom de commande valide est requis.**",
+        "title": "Commande {cmd}",
+        "required_description": "** **\n📝 **Commande:** `{name}`\n📌 **Catégorie :** `{ctg}`",
+        "if": {
+          "description": "📖 **Description:** {desc}",
+          "use": "🏷️  **Utilisation :** ```\n{use}\n```"
+        }
+      }
+    },
+    "kady": {
+      "invalid_subcommand": "> ❌ ** ** **Cette sous-commande n'existe pas.**",
+      "no_subcommand": "> ❌ ** ** **Cette commande fonctionne par le biais de sous-commandes.**",
+      "invite": {
+        "desc": "> ❤️ **Invitez moi maintenant !**",
+        "btn": "Cliquez ici"
+      },
+      "support": {
+        "desc": "> 🏷️ **Rejoins mon serveur support maintenant !**",
+        "btn": "Cliquez ici"
+      },
+      "informations": {
+        "desc": "> ⚙️ **Fonctionnement technique:**\n\n**Librairies et runtime:**\n[cargo](https://doc.rust-lang.org/cargo/) `{cargo}`\n[rustc](https://www.rust-lang.org/fr) `{rustc}`\n[rustup](https://www.rust-lang.org/fr) `{rustup}`\n\n**Hébergement:** [Raspberry Pi](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/) \n\n> 🏷️ **Quelques statistiques:**\n\n🌐 `{servers}` **serveurs**\n📌 `{channels}` **salons**\n\nKady est en fonctionnement depuis le <t:{online_since}:D> (<t:{online_since}:R>)\n\n**Liens utiles:**\n[Support]({support}) - [Dashboard]({website}) - [Top.gg]({top_gg})"
+      },
+      "suggest": {
+        "title": "Que souhaitez-vous suggérer sur Kady ?",
+        "question": "Quelle est votre suggestion ?",
+        "question_placeholder": "Entrez votre suggestion ici",
+        "contacted_after": "Acceptez-vous d'être recontacté plus tard ?",
+        "sent": "> ❤️ ** ** **Merci d'avoir pris le temps de partager votre idée !**\nElle a été envoyée à l'équipe"
+      },
+      "issue": {
+        "title": "Je prend des notes sur le problème",
+        "bug_type": "Quel est la catégorie du problème ?",
+        "bug_type_placeholder": "Faute, erreur, comportement non désiré...",
+        "bug_description": "Pouvez-vous décrire le problème ?",
+        "bug_desc_placeholder": "Veuillez décrire avec précision le problème",
+        "contacted_after": "Acceptez-vous d'être recontacté plus tard ?",
+        "sent": "> ❤️ ** ** **Merci d'avoir pris le temps de signaler ce problème !**\nLe rapport a été envoyée à l'équipe",
+        "sent_btn": "Si vous avez des questions"
+      },
+      "review": {
+        "title": "Je prend des notes sur votre avis",
+        "review": "Quel est votre avis ?",
+        "review_placeholder": "On vous écoute !",
+        "note": "Quelle note souhaitez-vous donner ?",
+        "note_placeholder": "Sur 5 (ex: 2/5)",
+        "sent": "> ❤️ ** ** **Merci d'avoir pris le temps de partager votre avis !**\nIl a été publié sur le serveur support",
+        "negative": "> \uD83D\uDCA5 ** ** **Il est impossible de donner une note négative.**\nVoulez-vous en parler avec nous ? [Cliquez ici]({support})"
+      }
     }
   }
 }

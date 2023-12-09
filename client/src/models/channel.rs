@@ -36,6 +36,10 @@ impl ChannelId {
     ) -> Result<ApiResult<Message>> {
         http.send_message(self, payload, None).await
     }
+
+    pub async fn fetch_channel(&self, http: &Http) -> Result<ApiResult<Channel>> {
+        http.fetch_channel(self).await
+    }
 }
 
 impl From<String> for ChannelId {

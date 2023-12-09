@@ -46,4 +46,4 @@ workspace = true
 features = ["json", "serde_json", "native-tls", "multipart"]
 
 [dependencies.error]
-path = "../error"
+path = "../modules/error"

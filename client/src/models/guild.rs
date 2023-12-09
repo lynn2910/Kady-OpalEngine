@@ -39,6 +39,12 @@ impl Display for GuildId {
     }
 }
 
+impl GuildId {
+    pub async fn fetch_guild(&self, http: &Http) -> Result<ApiResult<Guild>> {
+        http.fetch_guild(self).await
+    }
+}
+
 /// Represents a guild that the client is in
 ///
 /// Reference:
@@ -153,18 +159,30 @@ pub struct UnavailableGuild {
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct GuildMember {
     /// This field won't be included in the member object attached to MESSAGE_CREATE and MESSAGE_UPDATE gateway events.
+    #[serde(default)]
     pub user: Option<User>,
+    #[serde(default)]
     pub nickname: Option<String>,
+    #[serde(default)]
     pub avatar: Option<String>,
+    #[serde(default)]
     pub roles: Vec<Snowflake>,
     pub joined_at: DateTime<Utc>,
+    #[serde(with = "crate::models::components::timestamp_serde")]
+    #[serde(default)]
     pub premium_since: Option<DateTime<Utc>>,
+    #[serde(default)]
     pub flags: u64,
     /// whether the user has not yet passed the guild's Membership Screening requirements
+    #[serde(default)]
     pub pending: bool,
     // TODO: permissions
+    #[serde(default)]
     pub permissions: Option<String>,
+    #[serde(with = "crate::models::components::timestamp_serde")]
+    #[serde(default)]
     pub communication_disabled_until: Option<DateTime<Utc>>,
+    #[serde(default)]
     pub guild_id: Option<GuildId>,
 }
 

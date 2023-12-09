@@ -8,7 +8,7 @@
       "empty": "> 😶 ** ** **Il n'y a personne à classer !**",
       "xp_style": "> #{rank} **{name}**\nㅤ ㅤ{xp} xp | lvl {lvl}",
       "xp_disabled": "> ❌ ** ** **Le système d'experience n'est pas activé.**",
-      "xp_top": ">>> 🏆 ** ** Classement d'expérience :**\nServeur {guild}",
+      "xp_top": ">>> 🏆 ** ** **Classement d'expérience :**\nServeur {guild}",
       "xp_author_rank": "Vous êtes **#{rank}**.",
       "cookies_style": "> **#{rank}** - {cookies} - **{name}**",
       "cookies_author_rank": "Vous êtes **#{rank}**.",

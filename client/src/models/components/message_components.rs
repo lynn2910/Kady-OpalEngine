@@ -99,10 +99,10 @@ impl ActionRow {
 #[allow(clippy::large_enum_variant)]
 #[serde(untagged)]
 pub enum Component {
-    ActionRow(ActionRow),
+    TextInput(TextInput),
     Button(Button),
     SelectMenu(SelectMenu),
-    TextInput(TextInput),
+    ActionRow(ActionRow),
 }
 
 impl Component {
@@ -143,7 +143,47 @@ impl UpdateCache for Component {
     }
 }
 
-
+// impl<'de> Deserialize<'de> for Component {
+//     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+//         where
+//             D: Deserializer<'de>,
+//     {
+//         struct ComponentVisitor;
+//
+//         impl<'de> Visitor<'de> for ComponentVisitor {
+//             type Value = Component;
+//
+//             fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+//                 formatter.write_str("a struct representing a component")
+//             }
+//
+//             fn visit_map<A>(self, mut map: A) -> Result<Component, A::Error>
+//                 where
+//                     A: MapAccess<'de>,
+//             {
+//                 let mut value: Option<i32> = None;
+//                 while let Some(key) = map.next_key::<String>()? {
+//                     match key.as_str() {
+//                         "type" => {
+//                             value = map.next_value()?;
+//                             break;
+//                         }
+//                         _ => (),
+//                     }
+//                 }
+//                 match value {
+//                     Some(1) => Ok(Component::ActionRow(map.next_value()?)),
+//                     Some(2) => Ok(Component::Button(map.next_value()?)),
+//                     Some(3) => Ok(Component::SelectMenu(map.next_value()?)),
+//                     Some(4) => Ok(Component::TextInput(map.next_value()?)),
+//                     _ => Err(A::Error::invalid_value(serde::de::Unexpected::Other("type"), &"value between 1 and 4 inclusive")),
+//                 }
+//             }
+//         }
+//
+//         deserializer.deserialize_map(ComponentVisitor)
+//     }
+// }
 
 
 /// Represents a button in a message
@@ -304,6 +344,46 @@ pub struct SelectMenu {
     pub disabled: Option<bool>,
 }
 
+impl SelectMenu {
+    pub fn new(custom_id: impl ToString) -> Self {
+        Self {
+            kind: ComponentType::StringSelect,
+            custom_id: custom_id.to_string(),
+            options: Vec::new(),
+            channel_types: None,
+            placeholder: None,
+            min_values: None,
+            max_values: None,
+            disabled: None,
+        }
+    }
+
+    pub fn set_placeholder(mut self, placeholder: Option<impl ToString>) -> Self {
+        self.placeholder = placeholder.map(|p| p.to_string());
+        self
+    }
+
+    pub fn set_disabled(mut self, disabled: bool) -> Self {
+        self.disabled = Some(disabled);
+        self
+    }
+
+    pub fn set_min_values(mut self, min_values: u64) -> Self {
+        self.min_values = Some(min_values);
+        self
+    }
+
+    pub fn set_max_values(mut self, max_values: u64) -> Self {
+        self.max_values = Some(max_values);
+        self
+    }
+
+    pub fn add_option(mut self, option: SelectOption) -> Self {
+        self.options.push(option);
+        self
+    }
+}
+
 impl UpdateCache for SelectMenu {
     fn update(&mut self, from: &Self) {
         if self.kind != from.kind {
@@ -347,6 +427,33 @@ pub struct SelectOption {
     pub default: Option<bool>,
 }
 
+impl SelectOption {
+    pub fn new(label: impl ToString, value: impl ToString) -> Self {
+        Self {
+            label: label.to_string(),
+            value: value.to_string(),
+            description: None,
+            emoji: None,
+            default: None
+        }
+    }
+
+    pub fn set_default(mut self, default: bool) -> Self {
+        self.default = Some(default);
+        self
+    }
+
+    pub fn set_emoji(mut self, emoji: Option<impl Into<Emoji>>) -> Self {
+        self.emoji = emoji.map(|e| e.into());
+        self
+    }
+
+    pub fn set_description(mut self, description: Option<impl ToString>) -> Self {
+        self.description = description.map(|d| d.to_string());
+        self
+    }
+}
+
 
 
 /// Represents a text input in a modal
@@ -364,6 +471,8 @@ pub struct TextInput {
     pub min_length: Option<u64>,
     pub max_length: Option<u64>,
     pub disabled: Option<bool>,
+    #[serde(default)]
+    pub required: bool,
 
     /// Only in modals :)
     pub value: Option<InteractionDataOptionValue>
@@ -404,8 +513,27 @@ impl UpdateCache for TextInput {
 ///
 /// Reference:
 /// - [Text Input Styles](https://discord.com/developers/docs/interactions/message-components#text-inputs-text-input-styles)
-#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum TextInputStyle {
     Short = 1,
     Paragraph = 2,
+}
+
+impl Serialize for TextInputStyle {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+        match self {
+            Self::Short => serializer.serialize_u8(1),
+            Self::Paragraph => serializer.serialize_u8(2),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for TextInputStyle {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
+        match Deserialize::deserialize(deserializer)? {
+            1 => Ok(Self::Short),
+            2 => Ok(Self::Paragraph),
+            _ => Err(serde::de::Error::custom("invalid text_input style"))
+        }
+    }
 }

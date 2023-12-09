@@ -2,10 +2,10 @@
 /**/Cargo.lock
 .idea
 .vscode
-archive.saf
+resources/archive.saf
 pid
-blep.js
-lines_count.js
+resources/blep.js
+resources/lines_count.js
 _debug
 api/views/private/node_modules
 api/views/private/.idea

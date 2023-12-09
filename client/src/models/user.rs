@@ -1,5 +1,5 @@
 use std::fmt::Display;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use error::Result;
 use crate::manager::cache::UpdateCache;
 use crate::manager::http::{ApiResult, Http};
@@ -247,10 +247,37 @@ impl UpdateCache for User {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum NitroType {
     None = 0,
     NitroClassic = 1,
     Nitro = 2,
     NitroBasic = 3
+}
+
+impl Serialize for NitroType {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> where S: Serializer {
+        let value = match self {
+            Self::None => 0,
+            Self::NitroClassic => 1,
+            Self::Nitro => 2,
+            Self::NitroBasic => 3
+        };
+
+        value.serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for NitroType {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error> where D: Deserializer<'de> {
+        let value: i64 = Deserialize::deserialize(deserializer)?;
+
+        match value {
+            0 => Ok(Self::None),
+            1 => Ok(Self::NitroClassic),
+            2 => Ok(Self::Nitro),
+            3 => Ok(Self::NitroBasic),
+            _ => Err(serde::de::Error::custom(format!("Unknown nitro type: {}", value)))
+        }
+    }
 }

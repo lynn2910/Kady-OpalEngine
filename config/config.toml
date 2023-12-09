@@ -1,0 +1,86 @@
+# The intents to use for the bot
+intents = 37379
+version = "3.1.38_BETA"
+build = "63ecf7fdccbf4654950d34a5eca6a0af"
+langs = "/mnt/EspaceCommun/Code/kady/MapleSyrup/langs"
+pid = "/mnt/EspaceCommun/Code/kady/MapleSyrup/pid"
+dynamic_requests = "/mnt/EspaceCommun/Code/kady/MapleSyrup/requests.toml"
+
+logs_path = "/mnt/EspaceCommun/Code/kady/MapleSyrup/_debug/logs"
+memory_report_path = "/mnt/EspaceCommun/Code/kady/MapleSyrup/_debug/mem_report"
+core_path = "/mnt/EspaceCommun/Code/kady/MapleSyrup/target/debug/core"
+
+
+
+
+[security]
+archive_path = "/dev/null"
+discord_token = "ODA2NDM4NDg0MTU5MTAyOTk2.GQa_By.9oFYAgLLyIIo-3PEqgtwUH-qvW7LZhvv2w9LgA"
+
+
+
+
+[api]
+# Number of times to retry a request before giving up
+retry_limit= 5
+# Number of seconds to wait before retrying a request
+close_timeout = 5000
+declared_files = [
+    ["hello.txt", "/mnt/EspaceCommun/Code/kady/MapleSyrup/api/public/hello.txt", "plain/text"]
+]
+
+
+
+
+[client]
+guild_add_channel = "1150514577675653260"
+guild_remove_channel = "1150514577675653260"
+most_used_commands = [
+    "help",
+    "avatar",
+    "marry",
+    "banner",
+    "8ball"
+]
+invite_required_permissions = 277025769536
+invite_scope = "applications.commands%20bot"
+support_url = "https://discord.gg/UYgdRRYs7P"
+website = "https://kady-team.github.io/"
+top_gg = "https://top.gg/fr/bot/858766319506554899"
+suggestion_channel = "1046385920309477406"
+issue_channel = "1046385920309477406"
+review_channel = "1046385920309477406"
+
+
+
+[core]
+cargo_version =  "1.73.0 (9c4383fb5 2023-08-26)"
+rustc_version =  "1.26.0 (5af9b9484 2023-04-05)"
+rustup_version = "1.26.0 (5af9b9484 2023-04-05)"
+
+
+
+
+[status]
+# Available types: Game = 0; Streaming = 1; Listening = 2; Watching = 3; Custom = 4; Competing = 5
+alternate = [
+    { name = "les oiseaux chanter 🐦",  type = 2, presence = "online" },
+    { name = "fait des courses 🛒",     type = 3, presence = "online" },
+    { name = "version {version} 📦",    type = 0, presence = "online" },
+    { name = "{guilds} serveurs 🔎",    type = 3, presence = "online" },
+    { name = "lana chanter 🎶",         type = 2, presence = "online" },
+    { name = "avec Nariko 🎮",          type = 0, presence = "online" }
+]
+dev = { name = "🛠️ Opération d'un développeur en cours", type = 0, presence = "dnd" }
+maintenance = { name = "🔧 Maintenance", type = 0, presence = "idle" }
+unavailable = { name = "Service indisponible 🚀", type = 0, presence = "offline" }
+interval = 300 # In seconds; 300 = 5 minutes
+
+
+
+[database]
+username = "lynn"
+host = "localhost"
+port = 3306
+database_name = "mio"
+password = "Pusyux8484"

@@ -26,4 +26,4 @@ features = ["tokio", "macros", "default", "json", "tower-log", "ws"]
 path = "../client"
 
 [dependencies.database]
-path = "../database"
+path = "../modules/database"

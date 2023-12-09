@@ -5,6 +5,7 @@ use tokio::time::Instant;
 use crate::constants::MAX_MESSAGE_CACHE_SIZE;
 use crate::models::channel::{Channel, ChannelId, Thread};
 use crate::models::guild::{Guild, GuildId, GuildMember, Role};
+use crate::models::interaction::ApplicationCommand;
 use crate::models::message::Message;
 use crate::models::Snowflake;
 use crate::models::user::{Application, ClientUser, User, UserId};
@@ -21,7 +22,8 @@ pub struct CacheManager {
     application: Option<Application>,
     guilds: HashMap<GuildId, Guild>,
     channels: HashMap<ChannelId, Channel>,
-    users: HashMap<UserId, User>
+    users: HashMap<UserId, User>,
+    application_commands: HashMap<Snowflake, ApplicationCommand>
 }
 
 impl CacheManager {
@@ -43,6 +45,32 @@ impl CacheManager {
     }
     pub fn get_users_mem_size(&self) -> usize {
         std::mem::size_of_val(&self.users)
+    }
+
+    /// Updates the application command in the cache.
+    pub fn update_application_command(&mut self, command: &ApplicationCommand) {
+        if let Some(cache_command) = self.application_commands.get_mut(&command.id) {
+            cache_command.update(command);
+        } else {
+            self.application_commands.insert(command.id.clone(), command.clone());
+        }
+    }
+
+    pub fn clear_application_commands(&mut self) {
+        self.application_commands.clear();
+    }
+
+    pub fn get_application_commands_size(&self) -> usize {
+        self.application_commands.len()
+    }
+
+    /// Returns a reference to the application command if it exists.
+    pub fn get_application_command(&self, command_id: &Snowflake) -> Option<&ApplicationCommand> {
+        self.application_commands.get(command_id)
+    }
+
+    pub fn get_application_commands(&self) -> Vec<&ApplicationCommand> {
+        self.application_commands.values().collect()
     }
 
     /// Updates the client user in the cache.

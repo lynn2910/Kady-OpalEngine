@@ -46,6 +46,18 @@ pub struct Emoji {
     pub available: Option<bool>,
 }
 
+impl From<&str> for Emoji {
+    fn from(value: &str) -> Self {
+        Self::new(None, value.to_string())
+    }
+}
+
+impl From<String> for Emoji {
+    fn from(value: String) -> Self {
+        Self::new(None, value)
+    }
+}
+
 impl Emoji {
     pub fn to_json(&self) -> Value {
         json!({
@@ -78,8 +90,8 @@ pub(crate) mod timestamp_serde {
         where
             S: Serializer,
     {
-        match *timestamp {
-            Some(time) => time.timestamp().serialize(serializer),
+        match timestamp {
+            Some(time) => serializer.serialize_str(&time.to_rfc3339()),
             None => serializer.serialize_none(),
         }
     }
@@ -88,16 +100,12 @@ pub(crate) mod timestamp_serde {
         where
             D: Deserializer<'de>,
     {
-        let timestamp: Option<i64> = Deserialize::deserialize(deserializer)?;
+        let str_val: Option<String> = Deserialize::deserialize(deserializer)?;
 
-        match timestamp {
-            Some(ts) => {
-                match Utc.timestamp_millis_opt(ts) {
-                    chrono::LocalResult::Single(datetime) => Ok(Some(datetime)),
-                    _ => Err(serde::de::Error::custom("invalid timestamp")),
-                }
-            }
-            None => Ok(None),
-        }
+        str_val
+            .map(|s| DateTime::parse_from_rfc3339(&s)
+                .map_err(serde::de::Error::custom)
+                .map(|dt| dt.with_timezone(&Utc)))
+            .transpose()
     }
 }

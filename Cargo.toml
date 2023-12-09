@@ -1,23 +1,21 @@
 [workspace]
 members = [
     # The main process
-    "core",
+    "app",
     # Discord client
     "client",
     # Configuration manager
-    "config",
+    "modules/config",
     # The error handler
-    "error",
+    "modules/error",
     # Archive manager
-    "archive",
+    "modules/archive",
     # The translator
-    "translation",
+    "modules/translation",
     # The database
-    "database",
-    # The CLI
-    "cli",
+    "modules/database",
     # The feature manager
-    "features",
+    "modules/features",
     # The API
     "api"
 ]

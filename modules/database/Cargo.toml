@@ -1,0 +1,39 @@
+[package]
+name = "database"
+version = "0.1.17"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+
+[features]
+# More informations will be logged
+debug = []
+
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+toml = "0.7.4"
+log = { workspace = true }
+
+[dependencies.sqlx]
+workspace = true
+features = ["macros", "mysql", "default", "runtime-tokio-native-tls", "chrono"]
+
+[dependencies.chrono]
+workspace = true
+features = ["default"]
+
+[dependencies.error]
+path = "../error"
+
+[dependencies.archive]
+path = "../archive"
+
+[dependencies.client]
+path = "../../client"
+
+[dependencies.config]
+path = "../config"
