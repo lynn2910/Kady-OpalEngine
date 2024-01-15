@@ -15,7 +15,7 @@ core_path = "/mnt/EspaceCommun/Code/kady/MapleSyrup/target/debug/core"
 
 [security]
 archive_path = "/dev/null"
-discord_token = "ODA2NDM4NDg0MTU5MTAyOTk2.GQa_By.9oFYAgLLyIIo-3PEqgtwUH-qvW7LZhvv2w9LgA"
+discord_token = "token_discord"
 
 
 
